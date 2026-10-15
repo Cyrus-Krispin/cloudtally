@@ -1,70 +1,97 @@
+<div align="center">
+
+<img src="public/favicon.svg" alt="" width="64" height="64">
+
 # cloudtally
 
-Draw your AWS architecture and see what it costs, live, as you design it.
+**See what your AWS architecture costs while you draw it.**
 
-Drag services onto a canvas, connect them, and set your traffic (daily users and requests per user). Traffic flows through the diagram along the connections, and every service and connection is priced from it. Change the user count and the whole bill updates.
+[**Open cloudtally →**](https://cloudtally-one.vercel.app)
 
-## Features
+[![CI](https://github.com/Cyrus-Krispin/cloudtally/actions/workflows/ci.yml/badge.svg)](https://github.com/Cyrus-Krispin/cloudtally/actions/workflows/ci.yml)
+[![Prices updated weekly](https://github.com/Cyrus-Krispin/cloudtally/actions/workflows/update-prices.yml/badge.svg)](https://github.com/Cyrus-Krispin/cloudtally/actions/workflows/update-prices.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-- Drag-and-drop canvas with 13 AWS services plus a custom service for anything else, such as a SaaS API
-- A configuration panel for each service (memory, instance size, cache hit ratio, and more) with a line-by-line cost breakdown
-- Connections that carry traffic: calls per request (fan-out), read or write, payload size, and network path (same AZ, cross-AZ, internet)
-- Data transfer costs on connections, where surprise bills usually come from
-- A live monthly total in the top bar, with a breakdown by service
-- A scaling view (**Scale** in the top bar) that charts total and per-service cost from 1k to 10M daily users on a log scale, so you can see which services stay flat, which grow with traffic, and where options such as Lambda and Fargate cross over. Hover for the breakdown at any point, click to use that user count
-- PNG export with the total and a per-service cost breakdown
-- Autosave in the browser, plus JSON save and open
+<img src="public/screenshot.png" alt="The cloudtally editor showing a serverless API and its monthly cost" width="900">
 
-## How the cost model works
+</div>
 
-1. **Workload.** Monthly requests = daily users × requests per user per day × 30. This traffic starts at the **Users** node.
-2. **Flow.** Each connection sends `calls per request × incoming requests` to the next service. CloudFront passes on only cache misses.
-3. **Pricing.** Each service turns the traffic it receives into line items (requests, GB-seconds, instance-hours, and so on) priced from AWS list prices.
-4. **Data transfer.** Connections charge for internet egress ($0.09/GB) and cross-AZ traffic ($0.02/GB). CloudFront prices its own egress.
+## Why
 
-Peak traffic (average × the peak multiplier) sizes autoscaling services like Fargate.
+Architecture diagrams show what talks to what, but almost never what it costs. You find out after launch, when the bill arrives with a NAT Gateway line nobody planned for.
+
+cloudtally is a diagram tool where cost is part of the design. Set how much traffic you expect, draw your services, and the monthly bill updates as you go, down to each service and each connection.
+
+## What you can do
+
+- **Price a design as you draw it.** 18 AWS services, an LLM API, and a custom service for anything else, each with the settings that change its price.
+- **Model traffic, not just boxes.** Traffic starts at your users and flows along each connection. Set how many calls each request makes, such as 1 API call → 2 database reads.
+- **See hidden costs.** Connections charge for internet egress and cross-AZ transfer, where surprise bills usually come from.
+- **Plan for scale.** The Scale view charts cost from 1k to 10M daily users, so you can see which services stay flat, which grow, and where options like Lambda and Fargate cross over.
+- **Share it.** Copy a link that opens your exact design, or export a PNG with the cost breakdown included.
+- **Start fast.** Templates for a serverless API, a three-tier web app, an event pipeline and a static website.
+
+## How to use it
+
+1. **Set your traffic** in the header: daily users, requests per user and the peak-to-average ratio.
+2. **Drag services** from the sidebar onto the canvas.
+3. **Connect them** by dragging from the dot on the right of one service to another.
+4. **Click anything** to configure it: memory, instance size, cache hit ratio, calls per request, payload size.
+5. **Watch the total** in the header. Click it for a breakdown, or open **Scale** to see how it grows.
+
+Everything saves in your browser automatically. Use the **⋯** menu to share a link, export a PNG, or save and open JSON files.
+
+### Keyboard shortcuts
+
+| Action | Shortcut |
+|---|---|
+| Undo / redo | ⌘Z / ⇧⌘Z |
+| Copy, cut, paste | ⌘C, ⌘X, ⌘V |
+| Duplicate | ⌘D |
+| Select all | ⌘A |
+| Delete selection | ⌫ |
+| Select an area | Drag on the canvas |
+| Pan | Scroll, or Space + drag |
+
+Use Ctrl instead of ⌘ on Windows and Linux.
+
+## How costs are calculated
+
+1. **Traffic.** Monthly requests = daily users × requests per user × 30. Traffic starts at the **Users** node.
+2. **Flow.** Each connection sends *calls per request × incoming requests* to the next service. CloudFront passes on only cache misses.
+3. **Pricing.** Each service turns the traffic it receives into billable units, such as requests, GB-seconds or instance-hours, and prices them.
+4. **Data transfer.** Connections add internet egress ($0.09/GB) and cross-AZ traffic ($0.02/GB). CloudFront prices its own egress.
+5. **Peaks.** Average traffic × the peak multiplier sizes services that scale out, like Fargate.
+
+Hover over any cost line in the side panel to see the quantity and unit price behind it.
+
+## Services
+
+| Group | Services |
+|---|---|
+| Edge | CloudFront, API Gateway (HTTP and REST) |
+| Networking | Application Load Balancer, NAT Gateway |
+| Compute | Lambda, ECS Fargate, EC2, Step Functions |
+| Data | RDS PostgreSQL, Aurora Serverless v2, DynamoDB, ElastiCache, S3 |
+| Messaging | SQS, SNS, EventBridge, Kinesis Data Streams |
+| Security | Cognito |
+| AI | LLM API (enter your model's per-token prices) |
+| Other | Custom service (fixed monthly + per-request price) |
+
+Missing one you need? [Request a service](https://github.com/Cyrus-Krispin/cloudtally/issues/new/choose).
 
 ## Pricing data
 
-Prices are us-east-1 on-demand list prices from the public [AWS Price List Bulk API](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-the-aws-price-list-bulk-api.html), checked on 2026-10-15. They live in [`src/engine/prices.ts`](src/engine/prices.ts). Only the first pricing tier is used.
+Prices are **us-east-1 on-demand list prices** from the public [AWS Price List API](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-the-aws-price-list-bulk-api.html), using the first pricing tier. A GitHub Action checks them every week and opens a pull request when any price changes.
 
-These are estimates for comparing designs, not a quote. Check the [AWS Pricing Calculator](https://calculator.aws/) before you commit to a budget.
+cloudtally is for comparing designs and catching expensive surprises early. It isn't a quote: free tiers, savings plans, reserved pricing and volume discounts aren't included. Check the [AWS Pricing Calculator](https://calculator.aws/) before you commit to a budget.
 
-## Development
+## Contributing
 
-```bash
-npm install
-npm run dev     # start the app at http://localhost:5173
-npm test        # run cost engine tests
-npm run build   # type-check and build for production
-```
-
-### Project layout
-
-```
-src/engine/            Cost engine with no UI dependencies
-  prices.ts            AWS list prices
-  compute.ts           Traffic flow through the graph, and pricing
-  scaling.ts           The same diagram priced across a range of daily users
-  services/            One definition per AWS service
-src/components/        Canvas, palette, config panel, top bar
-src/assets/aws/        Official AWS service icons
-src/store.ts           Diagram state (zustand), autosaved to localStorage
-src/exporting.ts       PNG and JSON export
-```
-
-### Adding a service
-
-Create a `ServiceDef` in `src/engine/services/` with its settings (`fields`), defaults, and a `lineItems(config, usage)` function that returns what it bills for. Then add it to the list in `src/engine/services/index.ts`, and put its icon from the AWS icon package in `src/assets/aws/<type>.svg`. It appears in the palette automatically.
-
-## Icons
-
-Service icons are the official [AWS Architecture Icons](https://aws.amazon.com/architecture/icons/) (July 2026 release), stored in [`src/assets/aws/`](src/assets/aws) and named after each service's `type`. AWS provides them for creating architecture diagrams. They remain AWS's property and are not covered by this project's MIT license.
-
-## Built with
-
-React, TypeScript, Vite, [React Flow](https://reactflow.dev), zustand, html-to-image, Vitest.
+Contributions are welcome, from new services and pricing fixes to design ideas. See [CONTRIBUTING.md](CONTRIBUTING.md) for how the project is set up and how to send a pull request.
 
 ## License
 
-MIT
+[MIT](LICENSE).
+
+Service icons are the official [AWS Architecture Icons](https://aws.amazon.com/architecture/icons/), which AWS provides for architecture diagrams. They belong to AWS and aren't covered by this project's license. cloudtally isn't affiliated with Amazon Web Services.
