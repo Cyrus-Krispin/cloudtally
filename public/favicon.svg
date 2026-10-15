@@ -1,1 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#232f3e"/><text x="16" y="22" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#ff9900" text-anchor="middle">$</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="8" fill="#ff9900"/>
+  <path d="M9.75 23.5h12.5a4.5 4.5 0 0 0 .6-8.96 6.5 6.5 0 0 0-12.5-.94 5 5 0 0 0-.6 9.9Z" fill="#fff"/>
+  <path d="M13 16.75v3.75M16 16.75v3.75M19 16.75v3.75" stroke="#18181b" stroke-width="2" stroke-linecap="round"/>
+</svg>
