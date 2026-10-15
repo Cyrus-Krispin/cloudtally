@@ -5,7 +5,9 @@ import { PRICES_AS_OF, REGION } from '../engine/prices'
 import { serviceByType } from '../engine/services'
 import { downloadJson, exportPng } from '../exporting'
 import { count, money } from '../format'
-import { exampleDiagram, parseDiagram, toDiagram, useStore } from '../store'
+import { shareUrl } from '../share'
+import { parseDiagram, toDiagram, useStore, type Diagram } from '../store'
+import { templates } from '../templates'
 import { useCosts } from '../useCosts'
 import { NumberInput } from './fields'
 import { Icon, type IconName } from './Icon'
@@ -13,7 +15,17 @@ import { ScalingPanel } from './ScalingPanel'
 import { ServiceIcon } from './ServiceNode'
 
 /** A button with a popover that closes on outside click or Escape. */
-function Popover({ button, className, children }: { button: ReactNode; className: string; children: (close: () => void) => ReactNode }) {
+function Popover({
+  button,
+  label,
+  className,
+  children,
+}: {
+  button: ReactNode
+  label?: string
+  className: string
+  children: (close: () => void) => ReactNode
+}) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -31,7 +43,7 @@ function Popover({ button, className, children }: { button: ReactNode; className
 
   return (
     <div className={`popover-anchor ${className}`} ref={ref}>
-      <button className={`popover-trigger${open ? ' open' : ''}`} onClick={() => setOpen(!open)} aria-expanded={open}>
+      <button className={`popover-trigger${open ? ' open' : ''}`} onClick={() => setOpen(!open)} aria-expanded={open} aria-label={label}>
         {button}
       </button>
       {open && <div className="popover">{children(() => setOpen(false))}</div>}
@@ -109,11 +121,31 @@ export function TopBar() {
   const { rows, transfer, total } = useServiceTotals()
   const fileInput = useRef<HTMLInputElement>(null)
   const [showScaling, setShowScaling] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 2000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  const load = (d: Diagram) => {
+    loadDiagram(d)
+    setTimeout(() => fitView({ padding: 0.2 }), 50)
+  }
+
+  const onCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl(toDiagram(useStore.getState())))
+      setToast('Link copied')
+    } catch {
+      setToast('Could not copy the link')
+    }
+  }
 
   const onImport = async (file: File) => {
     try {
-      loadDiagram(parseDiagram(await file.text()))
-      setTimeout(() => fitView({ padding: 0.2 }), 50)
+      load(parseDiagram(await file.text()))
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Could not read that file.')
     }
@@ -154,6 +186,7 @@ export function TopBar() {
       <div className="topbar-right">
         <Popover
           className="total"
+          label="Cost breakdown"
           button={
             <>
               <span className="total-amount">{money(total)}</span>
@@ -170,9 +203,12 @@ export function TopBar() {
           Scale
         </button>
 
-        <Popover className="menu" button={<Icon name="more" size={18} />}>
+        <Popover className="menu" label="More actions" button={<Icon name="more" size={18} />}>
           {(close) => (
             <div className="menu-items" onClick={close}>
+              <MenuItem icon="link" onClick={onCopyLink}>
+                Copy share link
+              </MenuItem>
               <MenuItem icon="image" onClick={onExportPng}>
                 Export PNG
               </MenuItem>
@@ -183,15 +219,13 @@ export function TopBar() {
                 Open JSON
               </MenuItem>
               <hr />
-              <MenuItem
-                icon="template"
-                onClick={() => {
-                  loadDiagram(exampleDiagram())
-                  setTimeout(() => fitView({ padding: 0.2 }), 50)
-                }}
-              >
-                Load example
-              </MenuItem>
+              <div className="menu-label">Templates</div>
+              {templates.map((t) => (
+                <MenuItem key={t.id} icon="template" onClick={() => load(t.diagram())}>
+                  {t.name}
+                </MenuItem>
+              ))}
+              <hr />
               <MenuItem icon="trash" danger onClick={() => confirm('Remove every service and connection?') && clear()}>
                 Clear canvas
               </MenuItem>
@@ -211,6 +245,11 @@ export function TopBar() {
         />
       </div>
       {showScaling && <ScalingPanel onClose={() => setShowScaling(false)} />}
+      {toast && (
+        <div className="toast" role="status">
+          {toast}
+        </div>
+      )}
     </header>
   )
 }

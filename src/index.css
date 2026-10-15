@@ -205,6 +205,20 @@ button.breakdown-row:hover { background: var(--hover); }
 .menu-item svg { color: var(--muted); }
 .menu-item:hover { background: var(--hover); }
 .menu-item.danger, .menu-item.danger svg { color: var(--danger); }
+.menu-label { padding: 6px 10px 2px; font-size: 11px; color: var(--subtle); }
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  font-weight: 500;
+  box-shadow: var(--shadow-pop);
+  z-index: 40;
+}
 .menu-items hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; }
 
 /* Sidebar */

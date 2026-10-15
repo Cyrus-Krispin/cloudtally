@@ -9,13 +9,14 @@ import {
   type NodeTypes,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useCallback, type DragEvent } from 'react'
+import { useCallback, useEffect, type DragEvent } from 'react'
 import { ConfigPanel } from './components/ConfigPanel'
 import { DRAG_TYPE, Palette } from './components/Palette'
 import { ServiceNode } from './components/ServiceNode'
 import { TopBar } from './components/TopBar'
 import { TrafficEdge } from './components/TrafficEdge'
 import { serviceByType } from './engine/services'
+import { diagramFromHash } from './share'
 import { markerEnd, useStore } from './store'
 
 const nodeTypes: NodeTypes = { service: ServiceNode }
@@ -29,7 +30,17 @@ function Editor() {
   const onEdgesChange = useStore((s) => s.onEdgesChange)
   const onConnect = useStore((s) => s.onConnect)
   const addService = useStore((s) => s.addService)
-  const { screenToFlowPosition } = useReactFlow()
+  const loadDiagram = useStore((s) => s.loadDiagram)
+  const { screenToFlowPosition, fitView } = useReactFlow()
+
+  // Open a shared link's diagram, then drop the hash so later edits don't fight the URL.
+  useEffect(() => {
+    const shared = diagramFromHash(location.hash)
+    if (!shared) return
+    loadDiagram(shared)
+    history.replaceState(null, '', location.pathname + location.search)
+    setTimeout(() => fitView({ padding: 0.2 }), 50)
+  }, [loadDiagram, fitView])
 
   const onDrop = useCallback(
     (e: DragEvent) => {
