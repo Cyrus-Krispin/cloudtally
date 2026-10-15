@@ -1,0 +1,20 @@
+name: Service request
+description: Ask for an AWS service (or another provider) to be added
+labels: [service]
+body:
+  - type: input
+    id: service
+    attributes:
+      label: Service
+      placeholder: Amazon OpenSearch Serverless
+    validations:
+      required: true
+  - type: textarea
+    id: billing
+    attributes:
+      label: How is it billed?
+      description: The main things it charges for, such as per request, per GB or per hour. A link to its pricing page helps.
+  - type: textarea
+    id: why
+    attributes:
+      label: What would you use it for?

@@ -10,9 +10,10 @@ import { parseDiagram, toDiagram, useStore, type Diagram } from '../store'
 import { templates } from '../templates'
 import { useCosts } from '../useCosts'
 import { NumberInput } from './fields'
-import { Icon, type IconName } from './Icon'
+import { GitHubMark, Icon, type IconName } from './Icon'
 import { ScalingPanel } from './ScalingPanel'
 import { ServiceIcon } from './ServiceNode'
+import { REPO_URL } from '../links'
 
 /** A button with a popover that closes on outside click or Escape. */
 function Popover({
@@ -203,6 +204,10 @@ export function TopBar() {
           Scale
         </button>
 
+        <a className="icon-button github" href={REPO_URL} target="_blank" rel="noreferrer" aria-label="cloudtally on GitHub" title="GitHub">
+          <GitHubMark size={18} />
+        </a>
+
         <Popover className="menu" label="More actions" button={<Icon name="more" size={18} />}>
           {(close) => (
             <div className="menu-items" onClick={close}>
@@ -226,6 +231,9 @@ export function TopBar() {
                 </MenuItem>
               ))}
               <hr />
+              <MenuItem icon="info" onClick={() => (location.href = '/about')}>
+                About cloudtally
+              </MenuItem>
               <MenuItem icon="trash" danger onClick={() => confirm('Remove every service and connection?') && clear()}>
                 Clear canvas
               </MenuItem>
