@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { monthlyRequests } from '../engine/compute'
 import { serviceByType } from '../engine/services'
 import type { EdgeConfig, LineItem } from '../engine/types'
@@ -195,10 +196,46 @@ function EdgePanel({ id }: { id: string }) {
   )
 }
 
+function MultiPanel() {
+  const nodes = useStore(useShallow((s) => s.nodes.filter((n) => n.selected)))
+  const edgeCount = useStore((s) => s.edges.filter((e) => e.selected).length)
+  const removeSelected = useStore((s) => s.removeSelected)
+  const costs = useCosts()
+  const total = nodes.reduce((sum, n) => sum + (costs.nodes[n.id]?.total ?? 0), 0)
+  const parts = [nodes.length && `${nodes.length} service${nodes.length === 1 ? '' : 's'}`, edgeCount && `${edgeCount} connection${edgeCount === 1 ? '' : 's'}`]
+
+  return (
+    <PanelShell title={<div className="panel-title">{parts.filter(Boolean).join(', ')}</div>} subtitle="Selected" onDelete={removeSelected}>
+      <section className="panel-section">
+        <div className="panel-total">
+          <span>Monthly cost</span>
+          <strong>{money(total)}</strong>
+        </div>
+        <ul className="line-items">
+          {nodes.map((n) => (
+            <li key={n.id}>
+              <span>{n.data.name}</span>
+              <span className="num">{money(costs.nodes[n.id]?.total ?? 0)}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </PanelShell>
+  )
+}
+
 export function ConfigPanel() {
+  const selectedCount = useStore((s) => s.nodes.filter((n) => n.selected).length + s.edges.filter((e) => e.selected).length)
   const selectedNode = useStore((s) => s.nodes.find((n) => n.selected)?.id)
   const selectedEdge = useStore((s) => s.edges.find((e) => e.selected)?.id)
-  if (!selectedNode && !selectedEdge) return null
+  if (!selectedCount) return null
+  if (selectedCount > 1) {
+    return (
+      <aside className="panel">
+        <MultiPanel />
+      </aside>
+    )
+  }
 
   return (
     <aside className="panel">

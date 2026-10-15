@@ -1,9 +1,11 @@
 import {
   Background,
   BackgroundVariant,
+  ControlButton,
   Controls,
   ReactFlow,
   ReactFlowProvider,
+  SelectionMode,
   useReactFlow,
   type EdgeTypes,
   type NodeTypes,
@@ -14,6 +16,7 @@ import { ConfigPanel } from './components/ConfigPanel'
 import { DRAG_TYPE, Palette } from './components/Palette'
 import { ServiceNode } from './components/ServiceNode'
 import { TopBar } from './components/TopBar'
+import { Icon } from './components/Icon'
 import { TrafficEdge } from './components/TrafficEdge'
 import { serviceByType } from './engine/services'
 import { diagramFromHash } from './share'
@@ -23,6 +26,32 @@ const nodeTypes: NodeTypes = { service: ServiceNode }
 const edgeTypes: EdgeTypes = { traffic: TrafficEdge }
 const defaultEdgeOptions = { type: 'traffic', markerEnd }
 
+/** Editor keyboard shortcuts. Ignored while typing in a field. */
+function useShortcuts() {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return
+      const s = useStore.getState()
+      const mod = e.metaKey || e.ctrlKey
+      const key = e.key.toLowerCase()
+      const run = (fn: () => void) => {
+        e.preventDefault()
+        fn()
+      }
+      if (mod && key === 'z') run(e.shiftKey ? s.redo : s.undo)
+      else if (mod && key === 'y') run(s.redo)
+      else if (mod && key === 'c') s.copySelected()
+      else if (mod && key === 'x') run(() => (s.copySelected(), s.removeSelected()))
+      else if (mod && key === 'v') run(s.paste)
+      else if (mod && key === 'd') run(() => (s.copySelected(), s.paste()))
+      else if (mod && key === 'a') run(s.selectAll)
+      else if (!mod && (key === 'delete' || key === 'backspace')) run(s.removeSelected)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+}
+
 function Editor() {
   const nodes = useStore((s) => s.nodes)
   const edges = useStore((s) => s.edges)
@@ -31,6 +60,12 @@ function Editor() {
   const onConnect = useStore((s) => s.onConnect)
   const addService = useStore((s) => s.addService)
   const loadDiagram = useStore((s) => s.loadDiagram)
+  const beginDrag = useStore((s) => s.beginDrag)
+  const undo = useStore((s) => s.undo)
+  const redo = useStore((s) => s.redo)
+  const canUndo = useStore((s) => s.past.length > 0)
+  const canRedo = useStore((s) => s.future.length > 0)
+  useShortcuts()
   const { screenToFlowPosition, fitView } = useReactFlow()
 
   // Open a shared link's diagram, then drop the hash so later edits don't fight the URL.
@@ -76,12 +111,27 @@ function Editor() {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
-            deleteKeyCode={['Backspace', 'Delete']}
+            onNodeDragStart={beginDrag}
+            onSelectionDragStart={beginDrag}
+            deleteKeyCode={null}
+            selectionOnDrag
+            selectionMode={SelectionMode.Partial}
+            panOnDrag={[1, 2]}
+            panOnScroll
+            panActivationKeyCode="Space"
+            multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
             fitView
             fitViewOptions={{ padding: 0.2 }}
           >
             <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="#d4d4d8" />
-            <Controls showInteractive={false} />
+            <Controls showInteractive={false}>
+              <ControlButton onClick={undo} disabled={!canUndo} title="Undo (⌘Z)" aria-label="Undo">
+                <Icon name="undo" size={14} />
+              </ControlButton>
+              <ControlButton onClick={redo} disabled={!canRedo} title="Redo (⇧⌘Z)" aria-label="Redo">
+                <Icon name="redo" size={14} />
+              </ControlButton>
+            </Controls>
           </ReactFlow>
         </main>
         <ConfigPanel />
