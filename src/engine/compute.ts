@@ -1,4 +1,4 @@
-import { freeTier, prices } from './prices'
+import { prices } from './prices'
 import { serviceByType } from './services'
 import type { CostResult, EdgeCost, GraphEdge, GraphNode, LineItem, LineItemInput, Usage, Workload } from './types'
 
@@ -84,7 +84,7 @@ export function computeCosts(nodes: GraphNode[], edges: GraphEdge[], workload: W
     }
   }
 
-  const priced = applyFreeTier(allItems.map((a) => a.item), workload.applyFreeTier)
+  const priced: LineItem[] = allItems.map(({ item }) => ({ ...item, cost: item.quantity * item.unitPrice }))
 
   const result: CostResult = { nodes: {}, edges: edgeResults, total: 0, cycleNodeIds }
   for (const n of nodes) result.nodes[n.id] = { nodeId: n.id, usage: usage.get(n.id)!, items: [], total: 0 }
@@ -104,26 +104,11 @@ function transferItems(sourceType: string, targetType: string, network: string, 
   // Responses to users leave AWS over the internet.
   if (sourceType === 'clients' || network === 'internet') {
     return [
-      { label: 'Data out to internet', quantity: gb, unit: 'GB', unitPrice: prices.dataTransfer.internetOutPerGb, freeTierKey: 'internet.egressGb' },
+      { label: 'Data out to internet', quantity: gb, unit: 'GB', unitPrice: prices.dataTransfer.internetOutPerGb },
     ]
   }
   if (network === 'cross-az') {
     return [{ label: 'Cross-AZ transfer', quantity: gb, unit: 'GB', unitPrice: prices.dataTransfer.crossAzPerGb }]
   }
   return []
-}
-
-/** Free allowances are account-wide, so they are shared across items in proportion to usage. */
-function applyFreeTier(items: LineItemInput[], enabled: boolean): LineItem[] {
-  const totals = new Map<string, number>()
-  if (enabled) {
-    for (const item of items) {
-      if (item.freeTierKey) totals.set(item.freeTierKey, (totals.get(item.freeTierKey) ?? 0) + item.quantity)
-    }
-  }
-  return items.map((item) => {
-    const total = item.freeTierKey ? totals.get(item.freeTierKey) : undefined
-    const billableShare = total ? Math.max(0, 1 - (freeTier[item.freeTierKey!] ?? 0) / total) : 1
-    return { ...item, cost: item.quantity * billableShare * item.unitPrice }
-  })
 }

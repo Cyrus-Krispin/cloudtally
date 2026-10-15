@@ -46,7 +46,6 @@ export const defaultWorkload: Workload = {
   dailyActiveUsers: 10_000,
   requestsPerUserPerDay: 20,
   peakToAverage: 3,
-  applyFreeTier: false,
 }
 
 const defaultEdgeConfig = (targetType: string): EdgeConfig => ({

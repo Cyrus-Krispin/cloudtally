@@ -1,5 +1,6 @@
 import {
   Background,
+  BackgroundVariant,
   Controls,
   ReactFlow,
   ReactFlowProvider,
@@ -52,26 +53,28 @@ function Editor() {
   return (
     <div className="app">
       <TopBar />
-      <Palette onAdd={addAtCenter} />
-      <main className="canvas" onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          defaultEdgeOptions={defaultEdgeOptions}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          deleteKeyCode={['Backspace', 'Delete']}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-        >
-          <Background gap={20} />
-          <Controls showInteractive={false} />
-        </ReactFlow>
-      </main>
-      <ConfigPanel />
+      <div className="workspace">
+        <Palette onAdd={addAtCenter} />
+        <main className="canvas" onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            defaultEdgeOptions={defaultEdgeOptions}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            deleteKeyCode={['Backspace', 'Delete']}
+            fitView
+            fitViewOptions={{ padding: 0.2 }}
+          >
+            <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="#d4d4d8" />
+            <Controls showInteractive={false} />
+          </ReactFlow>
+        </main>
+        <ConfigPanel />
+      </div>
     </div>
   )
 }

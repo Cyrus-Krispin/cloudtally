@@ -49,9 +49,9 @@ export function Field({ field, value, onChange }: { field: FieldDef; value: Conf
   const id = `field-${field.key}`
   return (
     <div className="field">
-      <label htmlFor={id}>
+      <label htmlFor={id} title={field.help}>
         {field.label}
-        {field.type === 'number' && field.unit && <span className="unit"> ({field.unit})</span>}
+        {field.type === 'number' && field.unit && <span className="unit">{field.unit}</span>}
       </label>
       {field.type === 'number' ? (
         <NumberInput id={id} value={Number(value)} onChange={onChange} min={field.min} max={field.max} step={field.step} />
@@ -64,7 +64,6 @@ export function Field({ field, value, onChange }: { field: FieldDef; value: Conf
           ))}
         </select>
       )}
-      {field.help && <p className="help">{field.help}</p>}
     </div>
   )
 }

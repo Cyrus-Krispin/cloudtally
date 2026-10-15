@@ -36,8 +36,8 @@ export const cloudfront: ServiceDef = {
   passThrough: (c) => 1 - Math.min(Math.max(num(c, 'cacheHitPercent'), 0), 100) / 100,
   assumptions: () => ['North America pricing. Origin-to-CloudFront transfer is free.'],
   lineItems: (_c, u) => [
-    { label: 'Data out to users', quantity: u.gb, unit: 'GB', unitPrice: prices.cloudfront.perGbOut, freeTierKey: 'cloudfront.egressGb' },
-    { label: 'HTTPS requests', quantity: u.requests, unit: 'requests', unitPrice: prices.cloudfront.perHttpsRequest, freeTierKey: 'cloudfront.requests' },
+    { label: 'Data out to users', quantity: u.gb, unit: 'GB', unitPrice: prices.cloudfront.perGbOut },
+    { label: 'HTTPS requests', quantity: u.requests, unit: 'requests', unitPrice: prices.cloudfront.perHttpsRequest },
   ],
 }
 

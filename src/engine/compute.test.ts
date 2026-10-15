@@ -4,7 +4,7 @@ import { serviceByType } from './services'
 import type { EdgeConfig, GraphEdge, GraphNode, Workload } from './types'
 
 // 10k users × 20 requests/day × 30 days = 6M requests/month
-const workload: Workload = { dailyActiveUsers: 10_000, requestsPerUserPerDay: 20, peakToAverage: 3, applyFreeTier: false }
+const workload: Workload = { dailyActiveUsers: 10_000, requestsPerUserPerDay: 20, peakToAverage: 3 }
 
 const node = (id: string, type: string, config = {}): GraphNode => ({
   id,
@@ -43,22 +43,6 @@ describe('computeCosts', () => {
     expect(r.edges['users-api'].total).toBeCloseTo(((6e6 * 4) / 1024 / 1024) * 0.09, 4)
     expect(r.edges['api-fn'].total).toBe(0)
     expect(r.total).toBeCloseTo(6 + 6.000024 + 3.25 + 2.0599, 2)
-  })
-
-  it('applies always-free allowances', () => {
-    const r = computeCosts(serverless.nodes, serverless.edges, { ...workload, applyFreeTier: true })
-    expect(r.nodes.fn.total).toBeCloseTo(1.0, 4) // 5M billable requests, compute under 400k GB-s
-    expect(r.nodes.db.total).toBeCloseTo(0.75, 4) // storage under 25GB
-    expect(r.edges['users-api'].total).toBe(0) // under 100GB
-  })
-
-  it('shares a free allowance across services of the same type', () => {
-    const nodes = [node('users', 'clients'), node('a', 'lambda'), node('b', 'lambda')]
-    const edges = [edge('users', 'a'), edge('users', 'b')]
-    const r = computeCosts(nodes, edges, { ...workload, applyFreeTier: true })
-    // 12M requests in total, 1M free: each function pays for 5.5M
-    expect(r.nodes.a.items[0].cost).toBeCloseTo(5.5e6 * 0.2e-6, 6)
-    expect(r.nodes.b.items[0].cost).toBeCloseTo(5.5e6 * 0.2e-6, 6)
   })
 
   it('only passes CloudFront cache misses to the origin', () => {

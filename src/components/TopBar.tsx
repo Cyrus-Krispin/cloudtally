@@ -1,5 +1,5 @@
 import { useReactFlow } from '@xyflow/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { monthlyRequests } from '../engine/compute'
 import { PRICES_AS_OF, REGION } from '../engine/prices'
 import { serviceByType } from '../engine/services'
@@ -8,51 +8,95 @@ import { count, money } from '../format'
 import { exampleDiagram, parseDiagram, toDiagram, useStore } from '../store'
 import { useCosts } from '../useCosts'
 import { NumberInput } from './fields'
+import { Icon, type IconName } from './Icon'
 import { ScalingPanel } from './ScalingPanel'
+import { ServiceIcon } from './ServiceNode'
 
-function Breakdown() {
+/** A button with a popover that closes on outside click or Escape. */
+function Popover({ button, className, children }: { button: ReactNode; className: string; children: (close: () => void) => ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div className={`popover-anchor ${className}`} ref={ref}>
+      <button className={`popover-trigger${open ? ' open' : ''}`} onClick={() => setOpen(!open)} aria-expanded={open}>
+        {button}
+      </button>
+      {open && <div className="popover">{children(() => setOpen(false))}</div>}
+    </div>
+  )
+}
+
+function useServiceTotals() {
   const nodes = useStore((s) => s.nodes)
   const costs = useCosts()
   const rows = nodes
+    .filter((n) => !serviceByType[n.data.type]?.isSource)
     .map((n) => ({ id: n.id, name: n.data.name, type: n.data.type, total: costs.nodes[n.id]?.total ?? 0 }))
-    .filter((r) => !serviceByType[r.type]?.isSource)
     .sort((a, b) => b.total - a.total)
   const transfer = Object.values(costs.edges).reduce((sum, e) => sum + e.total, 0)
-  const setSelected = useStore((s) => s.onNodesChange)
+  return { rows, transfer, total: costs.total }
+}
+
+function Breakdown({ close }: { close: () => void }) {
+  const { rows, transfer, total } = useServiceTotals()
+  const nodes = useStore((s) => s.nodes)
+  const onNodesChange = useStore((s) => s.onNodesChange)
+  const select = (id: string) => {
+    onNodesChange(nodes.map((n) => ({ type: 'select', id: n.id, selected: n.id === id })))
+    close()
+  }
+  const share = (v: number) => (total > 0 ? (v / total) * 100 : 0)
 
   return (
     <div className="breakdown">
-      <table className="cost-table">
-        <tbody>
-          {rows.map((r) => (
-            <tr
-              key={r.id}
-              className="clickable"
-              onClick={() => setSelected(nodes.map((n) => ({ type: 'select', id: n.id, selected: n.id === r.id })))}
-            >
-              <td>{r.name}</td>
-              <td className="num">{money(r.total)}</td>
-              <td className="num share">{costs.total > 0 ? Math.round((r.total / costs.total) * 100) : 0}%</td>
-            </tr>
-          ))}
-          <tr>
-            <td>Data transfer (connections)</td>
-            <td className="num">{money(transfer)}</td>
-            <td className="num share">{costs.total > 0 ? Math.round((transfer / costs.total) * 100) : 0}%</td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr>
-            <td>Total per month</td>
-            <td className="num">{money(costs.total)}</td>
-            <td />
-          </tr>
-        </tfoot>
-      </table>
-      <p className="help">
-        {REGION} on-demand list prices from the AWS Price List API, as of {PRICES_AS_OF}. Estimates only.
-      </p>
+      <ul>
+        {rows.map((r) => (
+          <li key={r.id}>
+            <button className="breakdown-row" onClick={() => select(r.id)}>
+              <ServiceIcon type={r.type} size={18} />
+              <span className="breakdown-name">{r.name}</span>
+              <span className="breakdown-amount">{money(r.total)}</span>
+              <span className="breakdown-bar" style={{ width: `${share(r.total)}%` }} />
+            </button>
+          </li>
+        ))}
+        {transfer > 0 && (
+          <li>
+            <div className="breakdown-row">
+              <span className="breakdown-spacer" />
+              <span className="breakdown-name">Data transfer</span>
+              <span className="breakdown-amount">{money(transfer)}</span>
+              <span className="breakdown-bar" style={{ width: `${share(transfer)}%` }} />
+            </div>
+          </li>
+        )}
+      </ul>
+      <div className="breakdown-footer">
+        {REGION} · on-demand · {PRICES_AS_OF}
+      </div>
     </div>
+  )
+}
+
+function MenuItem({ icon, onClick, children, danger }: { icon: IconName; onClick: () => void; children: ReactNode; danger?: boolean }) {
+  return (
+    <button className={`menu-item${danger ? ' danger' : ''}`} onClick={onClick}>
+      <Icon name={icon} />
+      {children}
+    </button>
   )
 }
 
@@ -62,20 +106,9 @@ export function TopBar() {
   const loadDiagram = useStore((s) => s.loadDiagram)
   const clear = useStore((s) => s.clear)
   const { getNodes, fitView } = useReactFlow()
-  const costs = useCosts()
+  const { rows, transfer, total } = useServiceTotals()
   const fileInput = useRef<HTMLInputElement>(null)
   const [showScaling, setShowScaling] = useState(false)
-
-  // Close open dropdowns when clicking anywhere else.
-  useEffect(() => {
-    const close = (e: MouseEvent) => {
-      document.querySelectorAll<HTMLDetailsElement>('.topbar details[open]').forEach((d) => {
-        if (!d.contains(e.target as Node)) d.open = false
-      })
-    }
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [])
 
   const onImport = async (file: File) => {
     try {
@@ -86,75 +119,85 @@ export function TopBar() {
     }
   }
 
-  const nodes = useStore((s) => s.nodes)
-  const onExportPng = () => {
-    const rows = nodes
-      .filter((n) => !serviceByType[n.data.type]?.isSource)
-      .map((n) => ({ label: n.data.name, total: costs.nodes[n.id]?.total ?? 0 }))
-      .sort((a, b) => b.total - a.total)
-      .map((r) => ({ label: r.label, amount: money(r.total) }))
-    const transfer = Object.values(costs.edges).reduce((sum, e) => sum + e.total, 0)
-    return exportPng(
+  const onExportPng = () =>
+    exportPng(
       getNodes(),
-      `${money(costs.total)} / month`,
-      `${count(workload.dailyActiveUsers)} daily users · ${workload.requestsPerUserPerDay} requests/user/day · ` +
-        `${count(monthlyRequests(workload))} requests/month · ${REGION} on-demand, prices as of ${PRICES_AS_OF}` +
-        (workload.applyFreeTier ? ' · free tier applied' : ''),
-      [...rows, { label: 'Data transfer', amount: money(transfer) }],
+      `${money(total)} / month`,
+      `${count(workload.dailyActiveUsers)} daily users · ${workload.requestsPerUserPerDay} requests per user · ` +
+        `${REGION} on-demand · prices as of ${PRICES_AS_OF}`,
+      [...rows.map((r) => ({ label: r.name, amount: money(r.total) })), { label: 'Data transfer', amount: money(transfer) }],
     )
-  }
 
   return (
     <header className="topbar">
       <div className="brand">
-        cloud<span>tally</span>
+        <img src="/favicon.svg" alt="" width={22} height={22} />
+        cloudtally
       </div>
 
-      <div className="workload">
+      <div className="workload" title={`${count(monthlyRequests(workload))} requests per month`}>
         <label>
-          Daily users
+          <span>Daily users</span>
           <NumberInput value={workload.dailyActiveUsers} min={0} step={1000} onChange={(v) => setWorkload({ dailyActiveUsers: v })} />
         </label>
         <label>
-          Requests/user/day
-          <NumberInput
-            value={workload.requestsPerUserPerDay}
-            min={0}
-            step={1}
-            onChange={(v) => setWorkload({ requestsPerUserPerDay: v })}
-          />
+          <span>Requests / user</span>
+          <NumberInput value={workload.requestsPerUserPerDay} min={0} step={1} onChange={(v) => setWorkload({ requestsPerUserPerDay: v })} />
         </label>
-        <label title="Peak traffic as a multiple of average. Used to size autoscaling services.">
-          Peak ×
+        <label title="Peak traffic as a multiple of the average">
+          <span>Peak</span>
           <NumberInput value={workload.peakToAverage} min={1} step={0.5} onChange={(v) => setWorkload({ peakToAverage: v })} />
+          <span className="suffix">×</span>
         </label>
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={workload.applyFreeTier}
-            onChange={(e) => setWorkload({ applyFreeTier: e.target.checked })}
-          />
-          Free tier
-        </label>
-        <span className="requests">= {count(monthlyRequests(workload))} req/mo</span>
       </div>
 
-      <details className="total">
-        <summary>
-          <span className="total-amount">{money(costs.total)}</span>
-          <span className="total-unit">/ month</span>
-          <span className="total-caret">▾</span>
-        </summary>
-        <Breakdown />
-      </details>
+      <div className="topbar-right">
+        <Popover
+          className="total"
+          button={
+            <>
+              <span className="total-amount">{money(total)}</span>
+              <span className="total-unit">/mo</span>
+              <Icon name="chevronDown" size={14} />
+            </>
+          }
+        >
+          {(close) => <Breakdown close={close} />}
+        </Popover>
 
-      <div className="actions">
-        <button className="primary" onClick={() => setShowScaling(true)} title="See how cost changes with daily users">
+        <button className="button" onClick={() => setShowScaling(true)}>
+          <Icon name="chart" />
           Scale
         </button>
-        <button onClick={onExportPng}>Export PNG</button>
-        <button onClick={() => downloadJson('cloudtally-diagram.json', toDiagram(useStore.getState()))}>Save JSON</button>
-        <button onClick={() => fileInput.current?.click()}>Open JSON</button>
+
+        <Popover className="menu" button={<Icon name="more" size={18} />}>
+          {(close) => (
+            <div className="menu-items" onClick={close}>
+              <MenuItem icon="image" onClick={onExportPng}>
+                Export PNG
+              </MenuItem>
+              <MenuItem icon="download" onClick={() => downloadJson('cloudtally-diagram.json', toDiagram(useStore.getState()))}>
+                Save JSON
+              </MenuItem>
+              <MenuItem icon="upload" onClick={() => fileInput.current?.click()}>
+                Open JSON
+              </MenuItem>
+              <hr />
+              <MenuItem
+                icon="template"
+                onClick={() => {
+                  loadDiagram(exampleDiagram())
+                  setTimeout(() => fitView({ padding: 0.2 }), 50)
+                }}
+              >
+                Load example
+              </MenuItem>
+              <MenuItem icon="trash" danger onClick={() => confirm('Remove every service and connection?') && clear()}>
+                Clear canvas
+              </MenuItem>
+            </div>
+          )}
+        </Popover>
         <input
           ref={fileInput}
           type="file"
@@ -166,26 +209,6 @@ export function TopBar() {
             e.target.value = ''
           }}
         />
-        <details className="menu">
-          <summary aria-label="More">⋯</summary>
-          <div className="menu-items">
-            <button
-              onClick={() => {
-                loadDiagram(exampleDiagram())
-                setTimeout(() => fitView({ padding: 0.2 }), 50)
-              }}
-            >
-              Load example
-            </button>
-            <button
-              onClick={() => {
-                if (confirm('Remove every service and connection?')) clear()
-              }}
-            >
-              Clear canvas
-            </button>
-          </div>
-        </details>
       </div>
       {showScaling && <ScalingPanel onClose={() => setShowScaling(false)} />}
     </header>

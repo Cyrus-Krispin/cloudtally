@@ -23,8 +23,8 @@ export const lambda: ServiceDef = {
     const gbSeconds = u.requests * (num(c, 'durationMs') / 1000) * (num(c, 'memoryMB') / 1024)
     const a = str(c, 'arch') === 'x86' ? 'x86' : 'arm'
     return [
-      { label: 'Requests', quantity: u.requests, unit: 'requests', unitPrice: prices.lambda.perRequest, freeTierKey: 'lambda.requests' },
-      { label: 'Compute', quantity: gbSeconds, unit: 'GB-seconds', unitPrice: prices.lambda.perGbSecond[a], freeTierKey: 'lambda.gbSeconds' },
+      { label: 'Requests', quantity: u.requests, unit: 'requests', unitPrice: prices.lambda.perRequest },
+      { label: 'Compute', quantity: gbSeconds, unit: 'GB-seconds', unitPrice: prices.lambda.perGbSecond[a] },
     ]
   },
 }

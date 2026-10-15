@@ -34,7 +34,6 @@ export const sqs: ServiceDef = {
       quantity: u.requests * num(c, 'requestsPerMessage'),
       unit: 'requests',
       unitPrice: prices.sqs.perRequest[str(c, 'queueType') === 'fifo' ? 'fifo' : 'standard'],
-      freeTierKey: 'sqs.requests',
     },
   ],
 }

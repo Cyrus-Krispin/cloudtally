@@ -11,7 +11,6 @@ export interface Workload {
   requestsPerUserPerDay: number
   /** Peak traffic as a multiple of the monthly average. Used for autoscaling and load balancer sizing. */
   peakToAverage: number
-  applyFreeTier: boolean
 }
 
 export type Operation = 'read' | 'write'
@@ -43,9 +42,6 @@ export interface LineItem {
   quantity: number
   unit: string
   unitPrice: number
-  /** Key into the free tier table, when an always-free allowance applies. */
-  freeTierKey?: string
-  /** Filled in by the engine after the free tier is applied. */
   cost: number
 }
 

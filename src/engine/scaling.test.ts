@@ -3,7 +3,7 @@ import { computeScaling, dauSteps, MAX_DAU, MIN_DAU } from './scaling'
 import { serviceByType } from './services'
 import type { GraphEdge, GraphNode, Workload } from './types'
 
-const workload: Workload = { dailyActiveUsers: 10_000, requestsPerUserPerDay: 20, peakToAverage: 3, applyFreeTier: false }
+const workload: Workload = { dailyActiveUsers: 10_000, requestsPerUserPerDay: 20, peakToAverage: 3 }
 
 const node = (id: string, type: string): GraphNode => ({ id, type, name: id, config: { ...serviceByType[type].defaults } })
 const edge = (source: string, target: string): GraphEdge => ({

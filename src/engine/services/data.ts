@@ -60,7 +60,7 @@ export const dynamodb: ServiceDef = {
     return [
       { label: 'Reads', quantity: u.reads * readUnits, unit: 'read units', unitPrice: prices.dynamodb.perReadUnit },
       { label: 'Writes', quantity: u.writes * writeUnits, unit: 'write units', unitPrice: prices.dynamodb.perWriteUnit },
-      { label: 'Storage', quantity: num(c, 'storageGB'), unit: 'GB-months', unitPrice: prices.dynamodb.storagePerGbMonth, freeTierKey: 'dynamodb.storageGb' },
+      { label: 'Storage', quantity: num(c, 'storageGB'), unit: 'GB-months', unitPrice: prices.dynamodb.storagePerGbMonth },
     ]
   },
 }

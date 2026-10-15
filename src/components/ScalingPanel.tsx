@@ -4,6 +4,7 @@ import { serviceByType } from '../engine/services'
 import { count, money } from '../format'
 import { useStore } from '../store'
 import { useGraph } from '../useCosts'
+import { Icon } from './Icon'
 
 /** Categorical colors in fixed order, checked for colour-blind separation between neighbours. */
 const PALETTE = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948']
@@ -266,23 +267,23 @@ export function ScalingPanel({ onClose }: { onClose: () => void }) {
           <div>
             <div className="panel-title">Cost at scale</div>
             <div className="panel-subtitle">
-              Monthly cost from {count(MIN_DAU)} to {count(MAX_DAU)} daily users, with everything else in the diagram unchanged.
+              {count(MIN_DAU)}–{count(MAX_DAU)} daily users
             </div>
           </div>
           <div className="segmented" role="tablist">
             {(['lines', 'stacked', 'table'] as const).map((m) => (
               <button key={m} role="tab" aria-selected={mode === m} className={mode === m ? 'active' : ''} onClick={() => setMode(m)}>
-                {m === 'lines' ? 'Lines (log)' : m === 'stacked' ? 'Stacked' : 'Table'}
+                {m === 'lines' ? 'Lines' : m === 'stacked' ? 'Stacked' : 'Table'}
               </button>
             ))}
           </div>
-          <button className="close" aria-label="Close" onClick={onClose}>
-            ×
+          <button className="icon-button" aria-label="Close" onClick={onClose}>
+            <Icon name="close" />
           </button>
         </header>
 
         {series.length === 0 ? (
-          <p className="hint">Add a service to the canvas to see how its cost scales.</p>
+          <p className="empty">Add a service to see how cost scales.</p>
         ) : mode === 'table' ? (
           <ScaleTable points={tablePoints} series={series} />
         ) : (
@@ -302,10 +303,6 @@ export function ScalingPanel({ onClose }: { onClose: () => void }) {
             <Chart points={points} series={series} mode={mode} currentDau={currentDau} />
           </>
         )}
-        <p className="help">
-          Fixed-price services (EC2, RDS, ElastiCache) stay flat; per-request services (Lambda, API Gateway, DynamoDB) grow
-          with traffic. Where two lines cross is where the cheaper option changes.
-        </p>
       </section>
     </div>
   )

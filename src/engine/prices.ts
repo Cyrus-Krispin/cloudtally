@@ -94,14 +94,3 @@ export const prices = {
     crossAzPerGb: 0.02,
   },
 }
-
-// AWS "always free" monthly allowances, shared across the whole account.
-export const freeTier: Record<string, number> = {
-  'lambda.requests': 1e6,
-  'lambda.gbSeconds': 400_000,
-  'sqs.requests': 1e6,
-  'dynamodb.storageGb': 25,
-  'internet.egressGb': 100,
-  'cloudfront.egressGb': 1000,
-  'cloudfront.requests': 10e6,
-}
