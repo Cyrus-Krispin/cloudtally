@@ -89,6 +89,36 @@
         }
       }
     },
+    "aurora": {
+      "perAcuHour": 0.12,
+      "storagePerGbMonth": 0.1,
+      "perIo": 2e-7
+    },
+    "sns": {
+      "perRequest": 5e-7,
+      "perHttpDelivery": 6e-7,
+      "perEmailDelivery": 0.00002
+    },
+    "eventbridge": {
+      "perEvent": 0.000001
+    },
+    "kinesis": {
+      "perStreamHour": 0.04,
+      "perGbIn": 0.08,
+      "perGbOut": 0.04
+    },
+    "stepFunctions": {
+      "perStateTransition": 0.000025,
+      "expressPerRequest": 0.000001,
+      "expressPerGbSecond": 0.00001667
+    },
+    "cognito": {
+      "perMau": {
+        "lite": 0.0055,
+        "essentials": 0.015,
+        "plus": 0.02
+      }
+    },
     "natGateway": {
       "perHour": 0.045,
       "perGbProcessed": 0.045

@@ -51,7 +51,7 @@ export interface ServiceDef {
   type: string
   label: string
   color: string
-  category: 'Clients' | 'Edge' | 'Compute' | 'Data' | 'Messaging' | 'Networking' | 'Other'
+  category: 'Clients' | 'Edge' | 'Compute' | 'Data' | 'Messaging' | 'Networking' | 'Security' | 'AI' | 'Other'
   description: string
   defaults: Config
   fields: FieldDef[]

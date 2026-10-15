@@ -107,7 +107,7 @@ const ec2Price = (name, list, match) =>
   )
 
 console.log('Downloading AWS price files…')
-const [lambda, apigw, elb, ecs, rds, ddb, s3, sqs, cache, cf, transfer] = await Promise.all([
+const [lambda, apigw, elb, ecs, rds, ddb, s3, sqs, cache, cf, transfer, sns, events, kinesis, states, cognito] = await Promise.all([
   offer('AWSLambda'),
   offer('AmazonApiGateway'),
   offer('AWSELB'),
@@ -119,6 +119,11 @@ const [lambda, apigw, elb, ecs, rds, ddb, s3, sqs, cache, cf, transfer] = await 
   offer('AmazonElastiCache'),
   offer('AmazonCloudFront', false),
   offer('AWSDataTransfer'),
+  offer('AmazonSNS'),
+  offer('AWSEvents'),
+  offer('AmazonKinesis'),
+  offer('AmazonStates'),
+  offer('AmazonCognito'),
 ])
 const ec2 = await ec2Rows((line) => line.includes('"OnDemand"') && /"(BoxUsage:|EBS:VolumeUsage\.gp3|NatGateway-)/.test(line))
 
@@ -212,6 +217,36 @@ const prices = {
         ),
       ]),
     ),
+  },
+  aurora: {
+    perAcuHour: price('Aurora Serverless v2 ACU', rows(rds, (a) => usage(/^Aurora:ServerlessV2Usage$/)(a) && a.databaseEngine === 'Aurora PostgreSQL')),
+    storagePerGbMonth: price('Aurora storage', rows(rds, (a) => usage(/^Aurora:StorageUsage$/)(a) && a.databaseEngine === 'Aurora PostgreSQL')),
+    perIo: price('Aurora I/O', rows(rds, (a) => usage(/^Aurora:StorageIOUsage$/)(a) && a.databaseEngine === 'Aurora PostgreSQL')),
+  },
+  sns: {
+    perRequest: price('SNS requests', rows(sns, usage(/^Requests-Tier1$/))),
+    perHttpDelivery: price('SNS HTTP deliveries', rows(sns, usage(/^DeliveryAttempts-HTTP$/))),
+    perEmailDelivery: price('SNS email deliveries', rows(sns, usage(/^DeliveryAttempts-SMTP$/))),
+  },
+  eventbridge: {
+    perEvent: price('EventBridge events', rows(events, usage(/-Event-64K-Chunks$/))),
+  },
+  kinesis: {
+    perStreamHour: price('Kinesis stream hours', rows(kinesis, usage(/^OnDemand-StreamHour$/))),
+    perGbIn: price('Kinesis GB in', rows(kinesis, usage(/^OnDemand-BilledIncomingBytes$/))),
+    perGbOut: price('Kinesis GB out', rows(kinesis, usage(/^OnDemand-BilledOutgoingBytes$/))),
+  },
+  stepFunctions: {
+    perStateTransition: price('Step Functions transitions', rows(states, usage(/-StateTransition$/))),
+    expressPerRequest: price('Step Functions Express requests', rows(states, usage(/-StepFunctions-Request$/))),
+    expressPerGbSecond: price('Step Functions Express GB-s', rows(states, usage(/-StepFunctions-GB-Second$/))),
+  },
+  cognito: {
+    perMau: {
+      lite: price('Cognito Lite MAU', rows(cognito, usage(/-CognitoLiteMAU$/))),
+      essentials: price('Cognito Essentials MAU', rows(cognito, usage(/-CognitoEssentialsMAU$/))),
+      plus: price('Cognito Plus MAU', rows(cognito, usage(/-CognitoPlusMAU$/))),
+    },
   },
   natGateway: {
     perHour: ec2Price('NAT Gateway hours', ec2, (r) => r.usageType === 'NatGateway-Hours'),

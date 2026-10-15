@@ -38,6 +38,53 @@ export const sqs: ServiceDef = {
   ],
 }
 
+export const cognito: ServiceDef = {
+  type: 'cognito',
+  label: 'Cognito',
+  color: '#DD344C',
+  category: 'Security',
+  description: 'User sign-up and sign-in billed per monthly active user.',
+  defaults: { tier: 'essentials', monthlyActiveUsers: 10_000 },
+  fields: [
+    {
+      key: 'tier',
+      label: 'Tier',
+      type: 'select',
+      options: [
+        { value: 'lite', label: 'Lite' },
+        { value: 'essentials', label: 'Essentials' },
+        { value: 'plus', label: 'Plus' },
+      ],
+    },
+    { key: 'monthlyActiveUsers', label: 'Monthly active users', type: 'number', min: 0, step: 1000 },
+  ],
+  lineItems: (c) => {
+    const tier = str(c, 'tier') as keyof typeof prices.cognito.perMau
+    return [
+      { label: 'Active users', quantity: num(c, 'monthlyActiveUsers'), unit: 'MAU', unitPrice: prices.cognito.perMau[tier] ?? prices.cognito.perMau.essentials },
+    ]
+  },
+}
+
+export const llm: ServiceDef = {
+  type: 'llm',
+  label: 'LLM API',
+  color: '#232F3E',
+  category: 'AI',
+  description: 'A hosted language model billed per input and output token.',
+  defaults: { inputTokens: 1000, outputTokens: 300, inputPricePerM: 3, outputPricePerM: 15 },
+  fields: [
+    { key: 'inputTokens', label: 'Input tokens per call', type: 'number', min: 0, step: 100 },
+    { key: 'outputTokens', label: 'Output tokens per call', type: 'number', min: 0, step: 50 },
+    { key: 'inputPricePerM', label: 'Input price per million tokens', type: 'number', min: 0, step: 0.05, unit: '$', help: "Use your model's current list price." },
+    { key: 'outputPricePerM', label: 'Output price per million tokens', type: 'number', min: 0, step: 0.05, unit: '$', help: "Use your model's current list price." },
+  ],
+  lineItems: (c, u) => [
+    { label: 'Input tokens', quantity: u.requests * num(c, 'inputTokens'), unit: 'tokens', unitPrice: num(c, 'inputPricePerM') / 1e6 },
+    { label: 'Output tokens', quantity: u.requests * num(c, 'outputTokens'), unit: 'tokens', unitPrice: num(c, 'outputPricePerM') / 1e6 },
+  ],
+}
+
 export const custom: ServiceDef = {
   type: 'custom',
   label: 'Custom service',

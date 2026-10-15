@@ -110,3 +110,22 @@ export const elasticache: ServiceDef = {
     ]
   },
 }
+
+export const aurora: ServiceDef = {
+  type: 'aurora',
+  label: 'Aurora Serverless v2',
+  color: '#C925D1',
+  category: 'Data',
+  description: 'PostgreSQL-compatible database billed per capacity unit (ACU) hour, storage and I/O.',
+  defaults: { averageAcu: 2, storageGB: 50, iosPerRequest: 2 },
+  fields: [
+    { key: 'averageAcu', label: 'Average capacity', type: 'number', min: 0, step: 0.5, unit: 'ACU', help: 'Each ACU is about 2 GB of memory. Minimum is 0 when paused, or 0.5.' },
+    { key: 'storageGB', label: 'Storage', type: 'number', min: 0, step: 10, unit: 'GB' },
+    { key: 'iosPerRequest', label: 'I/Os per request', type: 'number', min: 0, step: 1, help: 'Storage reads and writes that miss the buffer cache.' },
+  ],
+  lineItems: (c, u) => [
+    { label: 'Capacity', quantity: num(c, 'averageAcu') * HOURS_PER_MONTH, unit: 'ACU-hours', unitPrice: prices.aurora.perAcuHour },
+    { label: 'Storage', quantity: num(c, 'storageGB'), unit: 'GB-months', unitPrice: prices.aurora.storagePerGbMonth },
+    { label: 'I/O', quantity: u.requests * num(c, 'iosPerRequest'), unit: 'I/Os', unitPrice: prices.aurora.perIo },
+  ],
+}
