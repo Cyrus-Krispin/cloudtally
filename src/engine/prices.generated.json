@@ -1,0 +1,105 @@
+{
+  "pricesAsOf": "2026-10-15",
+  "region": "us-east-1",
+  "prices": {
+    "lambda": {
+      "perRequest": 2e-7,
+      "perGbSecond": {
+        "x86": 0.0000166667,
+        "arm": 0.0000133334
+      }
+    },
+    "apiGateway": {
+      "perRequest": {
+        "http": 0.000001,
+        "rest": 0.0000035
+      }
+    },
+    "alb": {
+      "perHour": 0.0225,
+      "perLcuHour": 0.008
+    },
+    "fargate": {
+      "perVcpuHour": {
+        "x86": 0.04048,
+        "arm": 0.03238
+      },
+      "perGbHour": {
+        "x86": 0.004445,
+        "arm": 0.00356
+      }
+    },
+    "ec2": {
+      "perHour": {
+        "t3.micro": 0.0104,
+        "t3.small": 0.0208,
+        "t3.medium": 0.0416,
+        "t3.large": 0.0832,
+        "m7g.large": 0.0816,
+        "m7i.large": 0.1008,
+        "c7g.large": 0.0725,
+        "c7i.large": 0.08925,
+        "r7g.large": 0.1071,
+        "r7i.large": 0.1323
+      },
+      "ebsGp3PerGbMonth": 0.08
+    },
+    "rds": {
+      "perHour": {
+        "db.t4g.micro": 0.016,
+        "db.t4g.small": 0.032,
+        "db.t4g.medium": 0.065,
+        "db.t4g.large": 0.129,
+        "db.m7g.large": 0.168,
+        "db.r7g.large": 0.239
+      },
+      "gp3PerGbMonth": 0.115
+    },
+    "dynamodb": {
+      "perReadUnit": 1.25e-7,
+      "perWriteUnit": 6.25e-7,
+      "storagePerGbMonth": 0.25
+    },
+    "s3": {
+      "storagePerGbMonth": 0.023,
+      "perGet": 4e-7,
+      "perPut": 0.000005
+    },
+    "sqs": {
+      "perRequest": {
+        "standard": 4e-7,
+        "fifo": 5e-7
+      }
+    },
+    "elasticache": {
+      "perHour": {
+        "redis": {
+          "cache.t4g.micro": 0.016,
+          "cache.t4g.small": 0.032,
+          "cache.t4g.medium": 0.065,
+          "cache.m7g.large": 0.158,
+          "cache.r7g.large": 0.219
+        },
+        "valkey": {
+          "cache.t4g.micro": 0.0128,
+          "cache.t4g.small": 0.0256,
+          "cache.t4g.medium": 0.052,
+          "cache.m7g.large": 0.1264,
+          "cache.r7g.large": 0.1752
+        }
+      }
+    },
+    "natGateway": {
+      "perHour": 0.045,
+      "perGbProcessed": 0.045
+    },
+    "cloudfront": {
+      "perGbOut": 0.085,
+      "perHttpsRequest": 0.000001
+    },
+    "dataTransfer": {
+      "internetOutPerGb": 0.09,
+      "crossAzPerGb": 0.02
+    }
+  }
+}

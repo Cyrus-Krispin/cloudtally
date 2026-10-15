@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prices": "node scripts/fetch-prices.mjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.12.0",
