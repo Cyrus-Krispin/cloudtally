@@ -1,0 +1,40 @@
+name: Update prices
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  update:
+    name: Fetch AWS prices
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/fetch-prices.mjs --if-changed
+      - id: pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automated/price-update
+          delete-branch: true
+          commit-message: Update AWS prices
+          title: Update AWS prices
+          body: |
+            AWS list prices changed since the last update. This pull request was opened by the weekly [Update prices](../actions/workflows/update-prices.yml) workflow, which reads the public AWS Price List API.
+
+            Check the diff in `src/engine/prices.generated.json`, then merge to put the new prices live.
+          labels: prices
+      # Pull requests opened with the workflow token don't trigger other workflows,
+      # so start CI on the new branch directly.
+      - if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
+        run: gh workflow run ci.yml --ref automated/price-update
+        env:
+          GH_TOKEN: ${{ github.token }}

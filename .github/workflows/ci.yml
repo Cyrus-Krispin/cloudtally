@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Lets the price update workflow run checks on the pull requests it opens.
+  workflow_dispatch:
 
 jobs:
   check:
