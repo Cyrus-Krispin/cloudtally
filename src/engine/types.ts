@@ -54,8 +54,6 @@ export type LineItemInput = Omit<LineItem, 'cost'>
 export interface ServiceDef {
   type: string
   label: string
-  /** Short text shown in the node icon. */
-  short: string
   color: string
   category: 'Clients' | 'Edge' | 'Compute' | 'Data' | 'Messaging' | 'Networking' | 'Other'
   description: string

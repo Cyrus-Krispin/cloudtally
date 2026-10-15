@@ -10,7 +10,6 @@ const arch = [
 export const lambda: ServiceDef = {
   type: 'lambda',
   label: 'Lambda',
-  short: 'λ',
   color: '#ED7100',
   category: 'Compute',
   description: 'Serverless functions billed per request and per GB-second.',
@@ -33,7 +32,6 @@ export const lambda: ServiceDef = {
 export const fargate: ServiceDef = {
   type: 'fargate',
   label: 'ECS Fargate',
-  short: 'ECS',
   color: '#ED7100',
   category: 'Compute',
   description: 'Containers billed per vCPU-hour and GB-hour while tasks run.',
@@ -68,7 +66,6 @@ export const fargate: ServiceDef = {
 export const ec2: ServiceDef = {
   type: 'ec2',
   label: 'EC2',
-  short: 'EC2',
   color: '#ED7100',
   category: 'Compute',
   description: 'Virtual machines billed per instance-hour, plus EBS storage.',

@@ -5,7 +5,6 @@ import { num, options, str } from './util'
 export const rds: ServiceDef = {
   type: 'rds',
   label: 'RDS PostgreSQL',
-  short: 'RDS',
   color: '#C925D1',
   category: 'Data',
   description: 'Managed relational database billed per instance-hour and storage.',
@@ -36,7 +35,6 @@ export const rds: ServiceDef = {
 export const dynamodb: ServiceDef = {
   type: 'dynamodb',
   label: 'DynamoDB',
-  short: 'DDB',
   color: '#C925D1',
   category: 'Data',
   description: 'On-demand NoSQL table billed per read/write request unit and storage.',
@@ -70,7 +68,6 @@ export const dynamodb: ServiceDef = {
 export const s3: ServiceDef = {
   type: 's3',
   label: 'S3',
-  short: 'S3',
   color: '#7AA116',
   category: 'Data',
   description: 'Object storage billed per GB stored and per request.',
@@ -87,7 +84,6 @@ export const s3: ServiceDef = {
 export const elasticache: ServiceDef = {
   type: 'elasticache',
   label: 'ElastiCache',
-  short: 'EC',
   color: '#C925D1',
   category: 'Data',
   description: 'In-memory cache billed per node-hour.',

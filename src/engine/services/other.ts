@@ -5,7 +5,6 @@ import { num, str } from './util'
 export const sqs: ServiceDef = {
   type: 'sqs',
   label: 'SQS',
-  short: 'SQS',
   color: '#E7157B',
   category: 'Messaging',
   description: 'Message queue billed per request.',
@@ -43,7 +42,6 @@ export const sqs: ServiceDef = {
 export const custom: ServiceDef = {
   type: 'custom',
   label: 'Custom service',
-  short: '＋',
   color: '#232F3E',
   category: 'Other',
   description: 'Anything else, such as a SaaS API. Set a fixed monthly price and a per-request price.',

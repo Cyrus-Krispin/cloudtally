@@ -49,13 +49,18 @@ src/engine/            Cost engine with no UI dependencies
   scaling.ts           The same diagram priced across a range of daily users
   services/            One definition per AWS service
 src/components/        Canvas, palette, config panel, top bar
+src/assets/aws/        Official AWS service icons
 src/store.ts           Diagram state (zustand), autosaved to localStorage
 src/exporting.ts       PNG and JSON export
 ```
 
 ### Adding a service
 
-Create a `ServiceDef` in `src/engine/services/` with its settings (`fields`), defaults, and a `lineItems(config, usage)` function that returns what it bills for. Then add it to the list in `src/engine/services/index.ts`. It appears in the palette automatically.
+Create a `ServiceDef` in `src/engine/services/` with its settings (`fields`), defaults, and a `lineItems(config, usage)` function that returns what it bills for. Then add it to the list in `src/engine/services/index.ts`, and put its icon from the AWS icon package in `src/assets/aws/<type>.svg`. It appears in the palette automatically.
+
+## Icons
+
+Service icons are the official [AWS Architecture Icons](https://aws.amazon.com/architecture/icons/) (July 2026 release), stored in [`src/assets/aws/`](src/assets/aws) and named after each service's `type`. AWS provides them for creating architecture diagrams. They remain AWS's property and are not covered by this project's MIT license.
 
 ## Built with
 

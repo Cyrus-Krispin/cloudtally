@@ -5,7 +5,6 @@ import { num, str } from './util'
 export const clients: ServiceDef = {
   type: 'clients',
   label: 'Users',
-  short: '👥',
   color: '#545B64',
   category: 'Clients',
   description: 'Where traffic starts. Its volume comes from the workload settings in the top bar.',
@@ -18,7 +17,6 @@ export const clients: ServiceDef = {
 export const cloudfront: ServiceDef = {
   type: 'cloudfront',
   label: 'CloudFront',
-  short: 'CF',
   color: '#8C4FFF',
   category: 'Edge',
   description: 'CDN billed per GB served and per HTTPS request.',
@@ -46,7 +44,6 @@ export const cloudfront: ServiceDef = {
 export const apiGateway: ServiceDef = {
   type: 'apigateway',
   label: 'API Gateway',
-  short: 'API',
   color: '#E7157B',
   category: 'Edge',
   description: 'Managed API front door billed per request.',
@@ -75,7 +72,6 @@ export const apiGateway: ServiceDef = {
 export const alb: ServiceDef = {
   type: 'alb',
   label: 'Load Balancer',
-  short: 'ALB',
   color: '#8C4FFF',
   category: 'Networking',
   description: 'Application Load Balancer billed per hour and per load balancer capacity unit (LCU).',
@@ -105,7 +101,6 @@ export const alb: ServiceDef = {
 export const natGateway: ServiceDef = {
   type: 'natgateway',
   label: 'NAT Gateway',
-  short: 'NAT',
   color: '#8C4FFF',
   category: 'Networking',
   description: 'Lets private subnets reach the internet. Billed per hour and per GB processed.',
