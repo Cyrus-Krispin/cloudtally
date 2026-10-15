@@ -295,6 +295,9 @@ button.breakdown-row:hover { background: var(--hover); }
 .react-flow__edge.selected .react-flow__edge-path { stroke: var(--selected) !important; stroke-width: 2 !important; }
 .react-flow__controls { box-shadow: none; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .react-flow__controls-button { border-bottom-color: var(--border); width: 28px; height: 28px; }
+.react-flow__controls-button:disabled { opacity: 0.35; cursor: default; }
+.react-flow__controls-button svg[stroke] { max-width: 14px; max-height: 14px; fill: none; }
+.react-flow__selection { background: rgba(37, 99, 235, 0.06); border: 1px solid rgba(37, 99, 235, 0.4); }
 .react-flow__attribution { background: transparent; color: var(--subtle); }
 .exporting .service-node.selected { border-color: var(--border); box-shadow: 0 1px 2px rgba(24, 24, 27, 0.05); }
 .exporting .edge-label.selected { border-color: var(--border); }
