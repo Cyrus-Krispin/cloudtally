@@ -11,6 +11,7 @@ Drag services onto a canvas, connect them, and set your traffic (daily users and
 - Connections that carry traffic: calls per request (fan-out), read or write, payload size, and network path (same AZ, cross-AZ, internet)
 - Data transfer costs on connections, where surprise bills usually come from
 - A live monthly total in the top bar, with a breakdown by service
+- A scaling view (**Scale** in the top bar) that charts total and per-service cost from 1k to 10M daily users on a log scale, so you can see which services stay flat, which grow with traffic, and where options such as Lambda and Fargate cross over. Hover for the breakdown at any point, click to use that user count
 - AWS always-free tier toggle, shared across services the way AWS applies it
 - PNG export with the total and a per-service cost breakdown
 - Autosave in the browser, plus JSON save and open
@@ -45,6 +46,7 @@ npm run build   # type-check and build for production
 src/engine/            Cost engine with no UI dependencies
   prices.ts            AWS prices and free tier allowances
   compute.ts           Traffic flow through the graph, and pricing
+  scaling.ts           The same diagram priced across a range of daily users
   services/            One definition per AWS service
 src/components/        Canvas, palette, config panel, top bar
 src/store.ts           Diagram state (zustand), autosaved to localStorage

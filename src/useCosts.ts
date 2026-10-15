@@ -3,7 +3,8 @@ import { computeCosts } from './engine/compute'
 import type { GraphEdge, GraphNode } from './engine/types'
 import { useStore } from './store'
 
-export function useCosts() {
+/** The cost-relevant parts of the diagram, as plain engine input. */
+export function useGraph() {
   const nodes = useStore((s) => s.nodes)
   const edges = useStore((s) => s.edges)
   const workload = useStore((s) => s.workload)
@@ -22,10 +23,15 @@ export function useCosts() {
       [string, string, string, { config: GraphEdge['config'] }][],
       typeof workload,
     ]
-    return computeCosts(
-      graphNodes.map(([id, d]) => ({ ...d, id })),
-      graphEdges.map(([id, source, target, d]) => ({ id, source, target, config: d.config })),
-      w,
-    )
+    return {
+      nodes: graphNodes.map(([id, d]): GraphNode => ({ ...d, id })),
+      edges: graphEdges.map(([id, source, target, d]): GraphEdge => ({ id, source, target, config: d.config })),
+      workload: w,
+    }
   }, [key])
+}
+
+export function useCosts() {
+  const graph = useGraph()
+  return useMemo(() => computeCosts(graph.nodes, graph.edges, graph.workload), [graph])
 }

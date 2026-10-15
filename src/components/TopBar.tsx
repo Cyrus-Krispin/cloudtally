@@ -1,5 +1,5 @@
 import { useReactFlow } from '@xyflow/react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { monthlyRequests } from '../engine/compute'
 import { PRICES_AS_OF, REGION } from '../engine/prices'
 import { serviceByType } from '../engine/services'
@@ -8,6 +8,7 @@ import { count, money } from '../format'
 import { exampleDiagram, parseDiagram, toDiagram, useStore } from '../store'
 import { useCosts } from '../useCosts'
 import { NumberInput } from './fields'
+import { ScalingPanel } from './ScalingPanel'
 
 function Breakdown() {
   const nodes = useStore((s) => s.nodes)
@@ -63,6 +64,7 @@ export function TopBar() {
   const { getNodes, fitView } = useReactFlow()
   const costs = useCosts()
   const fileInput = useRef<HTMLInputElement>(null)
+  const [showScaling, setShowScaling] = useState(false)
 
   // Close open dropdowns when clicking anywhere else.
   useEffect(() => {
@@ -147,6 +149,9 @@ export function TopBar() {
       </details>
 
       <div className="actions">
+        <button className="primary" onClick={() => setShowScaling(true)} title="See how cost changes with daily users">
+          Scale
+        </button>
         <button onClick={onExportPng}>Export PNG</button>
         <button onClick={() => downloadJson('cloudtally-diagram.json', toDiagram(useStore.getState()))}>Save JSON</button>
         <button onClick={() => fileInput.current?.click()}>Open JSON</button>
@@ -182,6 +187,7 @@ export function TopBar() {
           </div>
         </details>
       </div>
+      {showScaling && <ScalingPanel onClose={() => setShowScaling(false)} />}
     </header>
   )
 }
