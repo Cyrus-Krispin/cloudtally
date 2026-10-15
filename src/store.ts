@@ -1,30 +1,19 @@
-import {
-  addEdge,
-  applyEdgeChanges,
-  applyNodeChanges,
-  MarkerType,
-  type Connection,
-  type Edge,
-  type EdgeChange,
-  type Node,
-  type NodeChange,
-} from '@xyflow/react'
+import { addEdge, applyEdgeChanges, applyNodeChanges, type Connection, type EdgeChange, type NodeChange } from '@xyflow/react'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { serviceByType } from './engine/services'
+import {
+  defaultWorkload,
+  makeEdge,
+  makeNode,
+  type Diagram,
+  type ServiceNode,
+  type ServiceNodeData,
+  type TrafficEdge,
+} from './diagram'
 import type { Config, EdgeConfig, Workload } from './engine/types'
+import { defaultTemplate } from './templates'
 
-export type ServiceNodeData = { type: string; name: string; config: Config }
-export type TrafficEdgeData = { config: EdgeConfig }
-export type ServiceNode = Node<ServiceNodeData, 'service'>
-export type TrafficEdge = Edge<TrafficEdgeData, 'traffic'>
-
-export interface Diagram {
-  version: 1
-  workload: Workload
-  nodes: ServiceNode[]
-  edges: TrafficEdge[]
-}
+export * from './diagram'
 
 interface State {
   workload: Workload
@@ -42,65 +31,13 @@ interface State {
   clear: () => void
 }
 
-export const defaultWorkload: Workload = {
-  dailyActiveUsers: 10_000,
-  requestsPerUserPerDay: 20,
-  peakToAverage: 3,
-}
-
-const defaultEdgeConfig = (targetType: string): EdgeConfig => ({
-  callsPerRequest: 1,
-  operation: targetType === 'sqs' ? 'write' : 'read',
-  payloadKB: 4,
-  network: 'same-az',
-})
-
-export const markerEnd = { type: MarkerType.ArrowClosed, width: 18, height: 18 }
-
 let counter = 0
 const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${(counter++).toString(36)}`
-
-const makeNode = (id: string, type: string, x: number, y: number, config: Config = {}): ServiceNode => ({
-  id,
-  type: 'service',
-  position: { x, y },
-  data: { type, name: serviceByType[type].label, config: { ...serviceByType[type].defaults, ...config } },
-})
-
-const makeEdge = (source: string, target: string, config: Partial<EdgeConfig> = {}, targetType = ''): TrafficEdge => ({
-  id: `e-${source}-${target}`,
-  source,
-  target,
-  type: 'traffic',
-  markerEnd,
-  data: { config: { ...defaultEdgeConfig(targetType), ...config } },
-})
-
-/** A small serverless API shown on first launch. */
-export const exampleDiagram = (): Diagram => ({
-  version: 1,
-  workload: defaultWorkload,
-  nodes: [
-    makeNode('users', 'clients', 0, 120),
-    makeNode('cdn', 'cloudfront', 280, 120, { cacheHitPercent: 60 }),
-    makeNode('api', 'apigateway', 560, 120),
-    makeNode('fn', 'lambda', 840, 120),
-    makeNode('db', 'dynamodb', 1120, 20),
-    makeNode('assets', 's3', 560, 300),
-  ],
-  edges: [
-    makeEdge('users', 'cdn', { payloadKB: 20 }),
-    makeEdge('cdn', 'api', { payloadKB: 4 }),
-    makeEdge('cdn', 'assets', { callsPerRequest: 0.5, payloadKB: 50 }),
-    makeEdge('api', 'fn'),
-    makeEdge('fn', 'db', { callsPerRequest: 2, payloadKB: 2 }),
-  ],
-})
 
 export const useStore = create<State>()(
   persist(
     (set, get) => ({
-      ...exampleDiagram(),
+      ...defaultTemplate.diagram(),
       onNodesChange: (changes) => set({ nodes: applyNodeChanges(changes, get().nodes) }),
       onEdgesChange: (changes) => set({ edges: applyEdgeChanges(changes, get().edges) }),
       onConnect: (connection) => {
@@ -146,31 +83,3 @@ export const useStore = create<State>()(
     },
   ),
 )
-
-export const toDiagram = (s: Pick<State, 'workload' | 'nodes' | 'edges'>): Diagram => ({
-  version: 1,
-  workload: s.workload,
-  nodes: s.nodes.map(({ id, type, position, data }) => ({ id, type, position, data })),
-  edges: s.edges.map(({ id, source, target, sourceHandle, targetHandle, type, markerEnd, data }) => ({
-    id,
-    source,
-    target,
-    sourceHandle,
-    targetHandle,
-    type,
-    markerEnd,
-    data,
-  })),
-})
-
-/** Checks that an imported file looks like a diagram before loading it. */
-export function parseDiagram(text: string): Diagram {
-  const d = JSON.parse(text)
-  if (!d || d.version !== 1 || !Array.isArray(d.nodes) || !Array.isArray(d.edges)) {
-    throw new Error('This file is not a cloudtally diagram.')
-  }
-  for (const n of d.nodes) {
-    if (!serviceByType[n?.data?.type]) throw new Error(`Unknown service type: ${n?.data?.type}`)
-  }
-  return d
-}
