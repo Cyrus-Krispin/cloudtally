@@ -1,7 +1,14 @@
 import { useMemo } from 'react'
 import { computeCosts } from './engine/compute'
+import type { Graph } from './engine/compare'
 import type { GraphEdge, GraphNode } from './engine/types'
-import { useStore } from './store'
+import { useStore, type ServiceNode, type TrafficEdge } from './store'
+
+/** A design's canvas as plain engine input. */
+export const toGraph = (nodes: ServiceNode[], edges: TrafficEdge[]): Graph => ({
+  nodes: nodes.map((n) => ({ ...n.data, id: n.id })),
+  edges: edges.map((e) => ({ id: e.id, source: e.source, target: e.target, config: e.data!.config })),
+})
 
 /** The cost-relevant parts of the diagram, as plain engine input. */
 export function useGraph() {

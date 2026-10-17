@@ -62,9 +62,17 @@ export const toDiagram = (s: Pick<Diagram, 'workload' | 'nodes' | 'edges'>): Dia
   })),
 })
 
+/** Two designs on the same workload, shared together. */
+export interface Comparison {
+  a: Diagram
+  b: Diagram
+  active: 'a' | 'b'
+}
+
 /** Validates a saved diagram and fills in anything left out when it was saved. */
-export function parseDiagram(text: string): Diagram {
-  const d = JSON.parse(text)
+export const parseDiagram = (text: string): Diagram => validateDiagram(JSON.parse(text))
+
+export function validateDiagram(d: any): Diagram {
   if (!d || d.version !== 1 || !Array.isArray(d.nodes) || !Array.isArray(d.edges)) {
     throw new Error('This is not a cloudtally diagram.')
   }

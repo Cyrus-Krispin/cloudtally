@@ -14,6 +14,7 @@ const paths = {
   redo: 'M10.5 3.5l3 3-3 3M13.5 6.5h-7a4 4 0 0 0 0 8H9',
   info: 'M8 13.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11ZM8 7.5v3M8 5.5h.01',
   trash: 'M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.5 9h6l.5-9',
+  compare: 'M2.5 3.5h11v9h-11zM8 3.5v9',
 }
 
 export type IconName = keyof typeof paths

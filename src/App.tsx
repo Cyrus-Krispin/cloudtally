@@ -19,7 +19,7 @@ import { TopBar } from './components/TopBar'
 import { Icon } from './components/Icon'
 import { TrafficEdge } from './components/TrafficEdge'
 import { serviceByType } from './engine/services'
-import { diagramFromHash } from './share'
+import { comparisonFromHash, diagramFromHash } from './share'
 import { markerEnd, useStore } from './store'
 
 const nodeTypes: NodeTypes = { service: ServiceNode }
@@ -60,6 +60,7 @@ function Editor() {
   const onConnect = useStore((s) => s.onConnect)
   const addService = useStore((s) => s.addService)
   const loadDiagram = useStore((s) => s.loadDiagram)
+  const loadComparison = useStore((s) => s.loadComparison)
   const beginDrag = useStore((s) => s.beginDrag)
   const undo = useStore((s) => s.undo)
   const redo = useStore((s) => s.redo)
@@ -70,12 +71,14 @@ function Editor() {
 
   // Open a shared link's diagram, then drop the hash so later edits don't fight the URL.
   useEffect(() => {
-    const shared = diagramFromHash(location.hash)
-    if (!shared) return
-    loadDiagram(shared)
+    const comparison = comparisonFromHash(location.hash)
+    const shared = comparison ? null : diagramFromHash(location.hash)
+    if (comparison) loadComparison(comparison)
+    else if (shared) loadDiagram(shared)
+    else return
     history.replaceState(null, '', location.pathname + location.search)
     setTimeout(() => fitView({ padding: 0.2 }), 50)
-  }, [loadDiagram, fitView])
+  }, [loadDiagram, loadComparison, fitView])
 
   const onDrop = useCallback(
     (e: DragEvent) => {
