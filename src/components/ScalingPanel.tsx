@@ -1,16 +1,14 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useMemo, useState, type MouseEvent } from 'react'
 import { computeScaling, dauSteps, MAX_DAU, MIN_DAU, type ScalePoint } from '../engine/scaling'
 import { serviceByType } from '../engine/services'
 import { count, money } from '../format'
 import { useStore } from '../store'
 import { useGraph } from '../useCosts'
+import { axisMoney, DAU_TICKS, HEIGHT, MARGIN, useEscape, useWidth } from './chart'
 import { Icon } from './Icon'
 
 /** Categorical colors in fixed order, checked for colour-blind separation between neighbours. */
 const PALETTE = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948']
-const HEIGHT = 340
-const MARGIN = { top: 16, right: 16, bottom: 30, left: 60 }
-const TABLE_STEPS = [1e3, 1e4, 1e5, 1e6, 1e7]
 
 type Mode = 'lines' | 'stacked' | 'table'
 
@@ -20,9 +18,6 @@ interface Series {
   color: string
   value: (p: ScalePoint) => number
 }
-
-const compactUsd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 })
-const axisMoney = (v: number) => (v < 1 ? `$${Number(v.toPrecision(1))}` : compactUsd.format(v))
 
 /** One series per service plus data transfer. Past eight, the cheapest services fold into "Other". */
 function buildSeries(names: { id: string; name: string }[], points: ScalePoint[]): Series[] {
@@ -50,19 +45,6 @@ const niceCeil = (v: number) => {
   if (v <= 0) return 1
   const p = 10 ** Math.floor(Math.log10(v))
   return ([1, 2, 5, 10].find((m) => m * p >= v) ?? 10) * p
-}
-
-function useWidth() {
-  const ref = useRef<HTMLDivElement>(null)
-  const [width, setWidth] = useState(720)
-  useLayoutEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-  return [ref, width] as const
 }
 
 function Chart({ points, series, mode, currentDau }: { points: ScalePoint[]; series: Series[]; mode: 'lines' | 'stacked'; currentDau: number }) {
@@ -137,7 +119,7 @@ function Chart({ points, series, mode, currentDau }: { points: ScalePoint[]; ser
             </text>
           </g>
         ))}
-        {TABLE_STEPS.map((t) => (
+        {DAU_TICKS.map((t) => (
           <text key={t} className="tick" x={x(t)} y={HEIGHT - 10} textAnchor="middle">
             {count(t)}
           </text>
@@ -243,11 +225,7 @@ export function ScalingPanel({ onClose }: { onClose: () => void }) {
   const [mode, setMode] = useState<Mode>('lines')
   const currentDau = graph.workload.dailyActiveUsers
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  useEscape(onClose)
 
   const { points, tablePoints, series } = useMemo(() => {
     const steps = dauSteps()
@@ -255,7 +233,7 @@ export function ScalingPanel({ onClose }: { onClose: () => void }) {
     if (currentDau > MIN_DAU && currentDau < MAX_DAU && !steps.includes(currentDau)) steps.push(currentDau)
     steps.sort((a, b) => a - b)
     const points = computeScaling(graph.nodes, graph.edges, graph.workload, steps)
-    const tablePoints = computeScaling(graph.nodes, graph.edges, graph.workload, TABLE_STEPS)
+    const tablePoints = computeScaling(graph.nodes, graph.edges, graph.workload, DAU_TICKS)
     const names = graph.nodes.filter((n) => !serviceByType[n.type]?.isSource).map((n) => ({ id: n.id, name: n.name }))
     return { points, tablePoints, series: buildSeries(names, points) }
   }, [graph, currentDau])

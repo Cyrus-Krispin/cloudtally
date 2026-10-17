@@ -5,11 +5,14 @@ import {
   defaultWorkload,
   makeEdge,
   makeNode,
+  toDiagram,
+  type Comparison,
   type Diagram,
   type ServiceNode,
   type ServiceNodeData,
   type TrafficEdge,
 } from './diagram'
+import type { DesignId } from './engine/compare'
 import type { Config, EdgeConfig, Workload } from './engine/types'
 import { defaultTemplate } from './templates'
 
@@ -21,10 +24,26 @@ interface Snapshot {
   edges: TrafficEdge[]
 }
 
+/** One design's canvas and its own undo history. The workload is shared by both designs. */
+export interface Design {
+  nodes: ServiceNode[]
+  edges: TrafficEdge[]
+  past: Snapshot[]
+  future: Snapshot[]
+}
+
 interface State extends Snapshot {
   past: Snapshot[]
   future: Snapshot[]
   clipboard: Snapshot | null
+  /** The design on the canvas. */
+  active: DesignId
+  /** The design not on the canvas, or null until design B is started. */
+  other: Design | null
+  /** Shows a design on the canvas. Design B starts as a copy of A. */
+  switchDesign: (id: DesignId) => void
+  removeDesignB: () => void
+  loadComparison: (c: Comparison) => void
   onNodesChange: (changes: NodeChange<ServiceNode>[]) => void
   onEdgesChange: (changes: EdgeChange<TrafficEdge>[]) => void
   onConnect: (connection: Connection) => void
@@ -54,11 +73,31 @@ const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${(count
 
 const deselected = <T extends { selected?: boolean }>(items: T[]) => items.map((i) => (i.selected ? { ...i, selected: false } : i))
 
+interface Saved extends Snapshot {
+  active: DesignId
+  other: Pick<Design, 'nodes' | 'edges'> | null
+}
+
 export const useStore = create<State>()(
   persist(
     (set, get) => {
       let lastKey: string | null = null
       let lastTime = 0
+
+      const pushed = (past: Snapshot[], snapshot: Snapshot) => [...past.slice(-(HISTORY_LIMIT - 1)), snapshot]
+
+      // The workload is shared, so a design coming back on the canvas takes the current one into its
+      // history. Undo there then can't revert a workload change made while the other design was showing.
+      const rebased = (d: Design, workload: Workload): Design => ({
+        ...d,
+        past: d.past.map((s) => ({ ...s, workload })),
+        future: d.future.map((s) => ({ ...s, workload })),
+      })
+
+      const onCanvas = (): Design => {
+        const { nodes, edges, past, future } = get()
+        return { nodes: deselected(nodes), edges: deselected(edges), past, future }
+      }
 
       /** Records the current diagram as an undo point. */
       const checkpoint = (key?: string) => {
@@ -70,7 +109,7 @@ export const useStore = create<State>()(
         lastKey = key ?? null
         lastTime = now
         const { workload, nodes, edges, past } = get()
-        set({ past: [...past.slice(-(HISTORY_LIMIT - 1)), { workload, nodes: deselected(nodes), edges: deselected(edges) }], future: [] })
+        set({ past: pushed(past, { workload, nodes: deselected(nodes), edges: deselected(edges) }), future: [] })
       }
 
       const restore = (from: 'past' | 'future') => {
@@ -92,6 +131,40 @@ export const useStore = create<State>()(
         past: [],
         future: [],
         clipboard: null,
+        active: 'a',
+        other: null,
+        switchDesign: (id) => {
+          const { active, other, workload } = get()
+          if (id === active) return
+          const current = onCanvas()
+          const next = other ?? { nodes: current.nodes, edges: current.edges, past: [], future: [] }
+          lastKey = null
+          set({ ...rebased(next, workload), active: id, other: current })
+        },
+        removeDesignB: () => {
+          const { active, other, workload } = get()
+          if (!other) return
+          lastKey = null
+          set(active === 'b' ? { ...rebased(other, workload), active: 'a', other: null } : { other: null })
+        },
+        loadComparison: (c) => {
+          const { workload, active, other } = get()
+          const current = onCanvas()
+          const slots = { [active]: current, [active === 'a' ? 'b' : 'a']: other } as Record<DesignId, Design | null>
+          // Each design keeps its history, so undo on either one brings back what it showed before.
+          const next = (id: DesignId): Design => {
+            const was = slots[id]
+            return {
+              nodes: c[id].nodes,
+              edges: c[id].edges,
+              past: was ? pushed(was.past, { workload, nodes: was.nodes, edges: deselected(was.edges) }) : [],
+              future: [],
+            }
+          }
+          const hidden = c.active === 'a' ? 'b' : 'a'
+          lastKey = null
+          set({ ...next(c.active), workload: { ...defaultWorkload, ...c.a.workload }, active: c.active, other: next(hidden) })
+        },
         onNodesChange: (changes) => {
           if (changes.some((c) => c.type === 'remove')) checkpoint()
           set({ nodes: applyNodeChanges(changes, get().nodes) })
@@ -205,7 +278,26 @@ export const useStore = create<State>()(
     {
       name: 'cloudtally-diagram',
       version: 1,
-      partialize: (s) => ({ workload: s.workload, nodes: s.nodes, edges: s.edges }),
+      partialize: (s): Saved => ({
+        workload: s.workload,
+        nodes: s.nodes,
+        edges: s.edges,
+        active: s.active,
+        other: s.other && { nodes: s.other.nodes, edges: s.other.edges },
+      }),
+      merge: (saved, current) => {
+        const s = saved as Partial<Saved> | undefined
+        const other = s?.other ? { ...s.other, past: [], future: [] } : null
+        // Older saves have one design and no `active`.
+        return { ...current, ...s, active: other ? (s?.active ?? 'a') : 'a', other }
+      },
     },
   ),
 )
+
+/** Both designs as saved diagrams, with B null until it is started. */
+export function designs(s: Pick<State, 'workload' | 'nodes' | 'edges' | 'active' | 'other'>): { a: Diagram; b: Diagram | null } {
+  const shown = toDiagram(s)
+  const hidden = s.other && toDiagram({ workload: s.workload, nodes: s.other.nodes, edges: s.other.edges })
+  return s.active === 'a' ? { a: shown, b: hidden } : { a: hidden!, b: shown }
+}

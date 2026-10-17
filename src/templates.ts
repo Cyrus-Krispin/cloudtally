@@ -1,4 +1,4 @@
-import { defaultWorkload, makeEdge, makeNode, type Diagram } from './diagram'
+import { defaultWorkload, makeEdge, makeNode, type Comparison, type Diagram } from './diagram'
 
 export interface Template {
   id: string
@@ -96,3 +96,37 @@ export const templates: Template[] = [
 ]
 
 export const defaultTemplate = templates[0]
+
+export interface ComparisonTemplate {
+  id: string
+  name: string
+  comparison: () => Comparison
+}
+
+export const comparisonTemplates: ComparisonTemplate[] = [
+  {
+    id: 'serverless-vs-containers',
+    name: 'Serverless vs containers',
+    comparison: () => ({
+      active: 'a',
+      a: diagram(
+        [
+          makeNode('users', 'clients', 0, 120),
+          makeNode('api', 'apigateway', 280, 120),
+          makeNode('fn', 'lambda', 560, 120),
+          makeNode('db', 'dynamodb', 840, 120),
+        ],
+        [makeEdge('users', 'api'), makeEdge('api', 'fn'), makeEdge('fn', 'db', { callsPerRequest: 2, payloadKB: 2 })],
+      ),
+      b: diagram(
+        [
+          makeNode('users', 'clients', 0, 120),
+          makeNode('lb', 'alb', 280, 120),
+          makeNode('app', 'fargate', 560, 120, {}, 'App containers'),
+          makeNode('db', 'rds', 840, 120),
+        ],
+        [makeEdge('users', 'lb'), makeEdge('lb', 'app'), makeEdge('app', 'db', { callsPerRequest: 2, payloadKB: 2 })],
+      ),
+    }),
+  },
+]

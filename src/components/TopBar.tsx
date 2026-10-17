@@ -1,14 +1,15 @@
 import { useReactFlow } from '@xyflow/react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { monthlyRequests } from '../engine/compute'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { computeCosts, monthlyRequests } from '../engine/compute'
 import { PRICES_AS_OF, REGION } from '../engine/prices'
 import { serviceByType } from '../engine/services'
 import { downloadJson, exportPng } from '../exporting'
 import { count, money } from '../format'
 import { shareUrl } from '../share'
-import { parseDiagram, toDiagram, useStore, type Diagram } from '../store'
-import { templates } from '../templates'
-import { useCosts } from '../useCosts'
+import { designs, parseDiagram, toDiagram, useStore, type Comparison, type Diagram } from '../store'
+import { comparisonTemplates, templates } from '../templates'
+import { toGraph, useCosts } from '../useCosts'
+import { ComparePanel } from './ComparePanel'
 import { NumberInput } from './fields'
 import { GitHubMark, Icon, type IconName } from './Icon'
 import { ScalingPanel } from './ScalingPanel'
@@ -104,6 +105,49 @@ function Breakdown({ close }: { close: () => void }) {
   )
 }
 
+/** Switches the canvas between design A and B, with each one's monthly total. */
+function DesignTabs() {
+  const active = useStore((s) => s.active)
+  const other = useStore((s) => s.other)
+  const workload = useStore((s) => s.workload)
+  const switchDesign = useStore((s) => s.switchDesign)
+  const shownTotal = useCosts().total
+  const hiddenTotal = useMemo(() => {
+    if (!other) return null
+    const g = toGraph(other.nodes, other.edges)
+    return computeCosts(g.nodes, g.edges, workload).total
+  }, [other, workload])
+
+  return (
+    <div className="segmented designs" role="tablist" aria-label="Designs">
+      {(['a', 'b'] as const).map((id) => {
+        const total = id === active ? shownTotal : hiddenTotal
+        const name = id.toUpperCase()
+        if (total === null) {
+          return (
+            <button key={id} title="Start design B as a copy of A" onClick={() => switchDesign(id)}>
+              + {name}
+            </button>
+          )
+        }
+        return (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={id === active}
+            className={id === active ? 'active' : ''}
+            title={`Design ${name}: ${money(total)}/mo`}
+            onClick={() => switchDesign(id)}
+          >
+            <span className="design-letter">{name}</span>
+            {other && <span className="design-total">{money(total)}</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function MenuItem({ icon, onClick, children, danger }: { icon: IconName; onClick: () => void; children: ReactNode; danger?: boolean }) {
   return (
     <button className={`menu-item${danger ? ' danger' : ''}`} onClick={onClick}>
@@ -117,11 +161,15 @@ export function TopBar() {
   const workload = useStore((s) => s.workload)
   const setWorkload = useStore((s) => s.setWorkload)
   const loadDiagram = useStore((s) => s.loadDiagram)
+  const loadComparison = useStore((s) => s.loadComparison)
+  const removeDesignB = useStore((s) => s.removeDesignB)
+  const hasB = useStore((s) => s.other !== null)
   const clear = useStore((s) => s.clear)
   const { getNodes, fitView } = useReactFlow()
   const { rows, transfer, total } = useServiceTotals()
   const fileInput = useRef<HTMLInputElement>(null)
   const [showScaling, setShowScaling] = useState(false)
+  const [showCompare, setShowCompare] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
@@ -135,9 +183,16 @@ export function TopBar() {
     setTimeout(() => fitView({ padding: 0.2 }), 50)
   }
 
+  const loadPair = (c: Comparison) => {
+    loadComparison(c)
+    setTimeout(() => fitView({ padding: 0.2 }), 50)
+  }
+
   const onCopyLink = async () => {
+    const s = useStore.getState()
+    const { a, b } = designs(s)
     try {
-      await navigator.clipboard.writeText(shareUrl(toDiagram(useStore.getState())))
+      await navigator.clipboard.writeText(shareUrl(b ? { a, b, active: s.active } : a))
       setToast('Link copied')
     } catch {
       setToast('Could not copy the link')
@@ -167,6 +222,8 @@ export function TopBar() {
         <img src="/favicon.svg" alt="" width={22} height={22} />
         cloudtally
       </div>
+
+      <DesignTabs />
 
       <div className="workload" title={`${count(monthlyRequests(workload))} requests per month`}>
         <label>
@@ -199,9 +256,19 @@ export function TopBar() {
           {(close) => <Breakdown close={close} />}
         </Popover>
 
-        <button className="button" onClick={() => setShowScaling(true)}>
+        <button className="button" onClick={() => setShowScaling(true)} title="Cost at scale">
           <Icon name="chart" />
           Scale
+        </button>
+
+        <button
+          className="button"
+          onClick={() => setShowCompare(true)}
+          disabled={!hasB}
+          title={hasB ? 'Compare design A and B' : 'Add design B to compare'}
+        >
+          <Icon name="compare" />
+          Compare
         </button>
 
         <a className="icon-button github" href={REPO_URL} target="_blank" rel="noreferrer" aria-label="cloudtally on GitHub" title="GitHub">
@@ -230,6 +297,11 @@ export function TopBar() {
                   {t.name}
                 </MenuItem>
               ))}
+              {comparisonTemplates.map((t) => (
+                <MenuItem key={t.id} icon="compare" onClick={() => loadPair(t.comparison())}>
+                  {t.name}
+                </MenuItem>
+              ))}
               <hr />
               <MenuItem icon="info" onClick={() => (location.href = '/about')}>
                 About cloudtally
@@ -237,6 +309,11 @@ export function TopBar() {
               <MenuItem icon="trash" danger onClick={() => confirm('Remove every service and connection?') && clear()}>
                 Clear canvas
               </MenuItem>
+              {hasB && (
+                <MenuItem icon="trash" danger onClick={() => confirm('Remove design B?') && removeDesignB()}>
+                  Remove design B
+                </MenuItem>
+              )}
             </div>
           )}
         </Popover>
@@ -253,6 +330,7 @@ export function TopBar() {
         />
       </div>
       {showScaling && <ScalingPanel onClose={() => setShowScaling(false)} />}
+      {showCompare && <ComparePanel onClose={() => setShowCompare(false)} />}
       {toast && (
         <div className="toast" role="status">
           {toast}
