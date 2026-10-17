@@ -51,7 +51,18 @@ export function About() {
               Star on GitHub
             </a>
           </div>
-          <img className="about-shot" src="/screenshot.png" alt="The cloudtally editor showing a serverless API and its monthly cost" />
+          <video
+            className="about-shot"
+            src="/promo.mp4"
+            poster="/promo-poster.jpg"
+            aria-label="cloudtally in action: dragging services onto the canvas while the monthly cost updates"
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls
+            preload="metadata"
+          />
         </section>
 
         <section className="about-grid">

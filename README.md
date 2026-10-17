@@ -12,7 +12,9 @@
 [![Prices updated weekly](https://github.com/Cyrus-Krispin/cloudtally/actions/workflows/update-prices.yml/badge.svg)](https://github.com/Cyrus-Krispin/cloudtally/actions/workflows/update-prices.yml)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-<img src="public/screenshot.png" alt="The cloudtally editor showing a serverless API and its monthly cost" width="900">
+<a href="https://cloudtally-one.vercel.app/promo.mp4"><img src="docs/demo.gif" alt="Dragging services onto the cloudtally canvas while the monthly cost updates" width="900"></a>
+
+[Watch the full video (34s)](https://cloudtally-one.vercel.app/promo.mp4)
 
 </div>
 
@@ -85,6 +87,10 @@ Missing one you need? [Request a service](https://github.com/Cyrus-Krispin/cloud
 Prices are **us-east-1 on-demand list prices** from the public [AWS Price List API](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/using-the-aws-price-list-bulk-api.html), using the first pricing tier. A GitHub Action checks them every week and opens a pull request when any price changes.
 
 cloudtally is for comparing designs and catching expensive surprises early. It isn't a quote: free tiers, savings plans, reserved pricing and volume discounts aren't included. Check the [AWS Pricing Calculator](https://calculator.aws/) before you commit to a budget.
+
+## Privacy
+
+Your designs never leave your browser unless you share a link. The site counts page views with [Vercel Web Analytics](https://vercel.com/docs/analytics/privacy-policy), which uses no cookies and stores no personal data.
 
 ## Contributing
 
