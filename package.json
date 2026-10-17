@@ -12,6 +12,7 @@
     "prices": "node scripts/fetch-prices.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "@xyflow/react": "^12.12.0",
     "html-to-image": "1.11.11",
     "lz-string": "^1.5.0",

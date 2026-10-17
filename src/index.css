@@ -508,6 +508,8 @@ button.breakdown-row:hover { background: var(--hover); }
 .about-shot {
   display: block;
   width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #0b0b0f;
   border: 1px solid var(--border);
   border-radius: 14px;
   box-shadow: 0 30px 60px -20px rgba(24, 24, 27, 0.25);
